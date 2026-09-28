@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - react-rebuild
-      - responsive-final
     paths-ignore:
       - package-lock.json
 
