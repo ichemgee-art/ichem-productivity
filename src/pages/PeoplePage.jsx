@@ -108,7 +108,7 @@ export default function PeoplePage() {
               <div><CalendarCheck2 size={15} /><span>حضور</span><strong>{number(person.present_days)}</strong></div>
               <div><CalendarX2 size={15} /><span>غياب</span><strong>{number(person.absent_days)}</strong></div>
             </div>
-            <div className="person-footer"><span>نسبة من Pool الدور: <b>{number(person.pool_percent)}%</b></span><button className="btn btn-ghost btn-sm" onClick={() => showDetails(person)}>تفاصيل العمليات والحضور</button></div>
+            <div className="person-footer"><span>نسبة من Pool الدور: <b>{number(person.pool_percent)}%</b></span><button className="btn btn-ghost person-details-btn" onClick={() => showDetails(person)}>تفاصيل العمليات والحضور</button></div>
           </article>
         ))}
         {!rows.length ? <EmptyState /> : null}
