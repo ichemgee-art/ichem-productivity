@@ -53,6 +53,14 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
   }), [team, references.people])
 
   const ready = Boolean(form.work_date && form.project.trim() && form.section && form.meters !== '' && Number(form.meters) >= 0 && team.engineer.length)
+  const steps = {
+    date: Boolean(form.work_date),
+    project: Boolean(form.project.trim()),
+    section: Boolean(form.section),
+    meters: form.meters !== '' && Number(form.meters) >= 0,
+    team: team.engineer.length > 0,
+    review: ready,
+  }
 
   const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }))
   const setRole = (role, value) => setTeam((current) => ({ ...current, [role]: value }))
@@ -94,12 +102,12 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
   return (
     <form className="submission-form" onSubmit={submit} noValidate>
       <div className="entry-flow" aria-label="ترتيب إدخال الإنتاجية">
-        <span><b>1</b> التاريخ</span>
-        <span><b>2</b> المشروع</span>
-        <span><b>3</b> القطاع</span>
-        <span><b>4</b> الأمتار</span>
-        <span><b>5</b> فريق العمل</span>
-        <span><b>6</b> مراجعة وحفظ</span>
+        <span className={steps.date ? 'completed' : ''}><b>{steps.date ? <Check size={13} /> : '1'}</b> التاريخ</span>
+        <span className={steps.project ? 'completed' : ''}><b>{steps.project ? <Check size={13} /> : '2'}</b> المشروع</span>
+        <span className={steps.section ? 'completed' : ''}><b>{steps.section ? <Check size={13} /> : '3'}</b> القطاع</span>
+        <span className={steps.meters ? 'completed' : ''}><b>{steps.meters ? <Check size={13} /> : '4'}</b> الأمتار</span>
+        <span className={steps.team ? 'completed' : ''}><b>{steps.team ? <Check size={13} /> : '5'}</b> فريق العمل</span>
+        <span className={steps.review ? 'completed' : ''}><b>{steps.review ? <Check size={13} /> : '6'}</b> مراجعة وحفظ</span>
       </div>
       <section className="form-section">
         <div className="section-heading">
