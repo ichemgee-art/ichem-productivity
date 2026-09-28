@@ -106,6 +106,10 @@ export const appService = {
     }))
   },
 
+  async deletePerson(id) {
+    return unwrap(await supabase.rpc('admin_delete_person', { p_id: id }))
+  },
+
   async personOperations(personId, start, end) {
     return unwrap(
       await supabase
@@ -172,5 +176,9 @@ export const appService = {
       p_price: Number(price || 0),
       p_active: active,
     }))
+  },
+
+  async deleteSection(id) {
+    return unwrap(await supabase.rpc('admin_delete_section', { p_id: id }))
   },
 }
