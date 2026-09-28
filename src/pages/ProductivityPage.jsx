@@ -9,11 +9,13 @@ import EmptyState from '../components/EmptyState'
 import Modal from '../components/Modal'
 import SubmissionForm from '../components/SubmissionForm'
 import ExportButtons from '../components/ExportButtons'
+import { useFeedback } from '../context/FeedbackContext'
 
 export default function ProductivityPage() {
   const { selectedCycle, monthKey } = useCycle()
   const { permissions } = useAuth()
   const queryClient = useQueryClient()
+  const feedback = useFeedback()
   const [queryText, setQueryText] = useState('')
   const [project, setProject] = useState('')
   const [section, setSection] = useState('')
@@ -73,9 +75,32 @@ export default function ProductivityPage() {
     await queryClient.invalidateQueries({ queryKey: ['references'] })
   }
 
-  const reviewMutation = useMutation({ mutationFn: ({ id, reviewed }) => appService.setReview(id, reviewed), onSuccess: invalidate })
-  const deleteMutation = useMutation({ mutationFn: appService.deleteSubmission, onSuccess: invalidate })
-  const updateMutation = useMutation({ mutationFn: appService.updateSubmission, onSuccess: async () => { setEditing(null); setEditInitial(null); await invalidate() } })
+  const reviewMutation = useMutation({
+    mutationFn: ({ id, reviewed }) => appService.setReview(id, reviewed),
+    onSuccess: async (_data, variables) => {
+      await invalidate()
+      feedback.success(variables.reviewed ? 'تم اعتماد المراجعة' : 'تم إلغاء المراجعة', 'تم تحديث حالة العملية بنجاح.')
+    },
+    onError: (err) => feedback.error('تعذر تحديث المراجعة', err.message || 'حدث خطأ غير متوقع'),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: appService.deleteSubmission,
+    onSuccess: async () => {
+      await invalidate()
+      feedback.success('تم حذف العملية', 'تم تحديث البيانات والحضور المرتبط بها.')
+    },
+    onError: (err) => feedback.error('تعذر حذف العملية', err.message || 'حدث خطأ غير متوقع'),
+  })
+  const updateMutation = useMutation({
+    mutationFn: appService.updateSubmission,
+    onSuccess: async () => {
+      setEditing(null)
+      setEditInitial(null)
+      await invalidate()
+      feedback.success('تم حفظ التعديلات', 'تم تحديث العملية بنجاح.')
+    },
+    onError: (err) => feedback.error('تعذر حفظ التعديلات', err.message || 'حدث خطأ غير متوقع'),
+  })
 
   const beginEdit = async (row) => {
     setError('')
@@ -106,7 +131,15 @@ export default function ProductivityPage() {
   }
 
   const remove = async (row) => {
-    if (!window.confirm(`حذف عملية ${row.project} بتاريخ ${date(row.work_date)}؟`)) return
+    const accepted = await feedback.confirm({
+      title: 'حذف عملية الإنتاجية؟',
+      message: 'الحذف نهائي وسيتم تحديث الحضور المرتبط بهذه العملية.',
+      details: `${row.project} · ${date(row.work_date)} · ${number(row.meters)} متر · ${row.section}`,
+      confirmLabel: 'حذف العملية',
+      cancelLabel: 'رجوع',
+      tone: 'danger',
+    })
+    if (!accepted) return
     try { await deleteMutation.mutateAsync(row.id) } catch (err) { setError(err.message) }
   }
 
