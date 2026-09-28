@@ -8,7 +8,8 @@ import { money, number } from '../lib/format'
 import Modal from '../components/Modal'
 import EmptyState from '../components/EmptyState'
 import ExportButtons from '../components/ExportButtons'
-import { useFeedback } from '../context/FeedbackContext'\nimport { smartIncludes } from '../lib/smartSearch'
+import { useFeedback } from '../context/FeedbackContext'
+import { smartIncludes } from '../lib/smartSearch'
 
 export default function SectionsPage() {
   const { permissions } = useAuth()
