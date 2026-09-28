@@ -61,6 +61,14 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
 
   return (
     <form className="submission-form" onSubmit={submit}>
+      <div className="entry-flow" aria-label="ترتيب إدخال الإنتاجية">
+        <span><b>1</b> التاريخ</span>
+        <span><b>2</b> المشروع</span>
+        <span><b>3</b> القطاع</span>
+        <span><b>4</b> الأمتار</span>
+        <span><b>5</b> فريق العمل</span>
+        <span><b>6</b> مراجعة وحفظ</span>
+      </div>
       <section className="form-section">
         <div className="section-heading">
           <div><span className="section-kicker">01</span><h3>بيانات العملية</h3></div>
@@ -96,7 +104,7 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
 
       <section className="form-section">
         <div className="section-heading">
-          <div><span className="section-kicker">02</span><h3>فريق التنفيذ</h3></div>
+          <div><span className="section-kicker">02</span><h3>فريق التنفيذ — بالترتيب: مهندسين، فنيين، مساعدين، عمال</h3></div>
           <p>مسموح باختيار أكثر من مهندس وأكثر من فرد في كل دور.</p>
         </div>
         <div className="picker-grid">
