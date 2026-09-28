@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search, Save } from 'lucide-react'
 import { useCycle } from '../context/CycleContext'
@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { appService } from '../services/appService'
 import { date, roleLabels } from '../lib/format'
 import EmptyState from '../components/EmptyState'
+import ExportButtons from '../components/ExportButtons'
 
 export default function AttendancePage() {
   const { monthKey } = useCycle()
@@ -17,6 +18,7 @@ export default function AttendancePage() {
   const [queryText, setQueryText] = useState('')
   const [draftNotes, setDraftNotes] = useState({})
   const [error, setError] = useState('')
+  const exportRef = useRef(null)
 
   const query = useQuery({ queryKey: ['cycle-data', 'attendance', monthKey], queryFn: () => appService.attendance(monthKey), enabled: Boolean(monthKey) })
   const rows = query.data || []
@@ -41,16 +43,30 @@ export default function AttendancePage() {
     } catch (err) { setError(err.message || 'تعذر حفظ الملاحظة') }
   }
 
+  const excelSheets = [{
+    name: 'الحضور والغياب',
+    rows: filtered.map((row) => ({
+      'الشخص': row.person_name,
+      'الدور': roleLabels[row.role],
+      'التاريخ': date(row.attendance_date),
+      'الحالة': row.status === 'present' ? 'حاضر' : row.status === 'absent' ? 'غياب' : 'قادم',
+      'نوع الغياب': row.absence_type === 'excused' ? 'غياب بإذن' : row.absence_type === 'unexcused' ? 'غياب بدون إذن' : '—',
+      'الجمعة': row.is_friday ? 'نعم' : 'لا',
+      'الملاحظة': row.note || '',
+    })),
+  }]
+
   if (query.isLoading) return <div className="page-loader">جاري تحميل الحضور والغياب...</div>
 
   return (
     <div className="page-stack">
-      <section className="panel">
+      <section className="panel" ref={exportRef}>
         <div className="filters-bar attendance-filters">
           <div className="input-with-icon grow"><Search size={16} /><input value={queryText} onChange={(e) => setQueryText(e.target.value)} placeholder="بحث بالاسم أو التاريخ..." /></div>
           <select value={role} onChange={(e) => { setRole(e.target.value); setPerson('') }}><option value="">كل الأدوار</option><option value="engineer">المهندسين</option><option value="technician">الفنيين</option><option value="assistant">المساعدين</option><option value="worker">العمال</option></select>
           <select value={person} onChange={(e) => setPerson(e.target.value)}><option value="">كل الأشخاص</option>{people.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
           <select value={status} onChange={(e) => setStatus(e.target.value)}><option value="">كل الحالات</option><option value="present">حاضر</option><option value="absent">غياب</option><option value="upcoming">قادم</option></select>
+          <ExportButtons filename={`attendance-${monthKey}`} excelSheets={excelSheets} pdfTarget={exportRef} compact />
         </div>
         {error ? <div className="inline-error">{error}</div> : null}
         <div className="data-table-wrap">
