@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
-import { Activity, CalendarCheck2, CalendarX2, CircleDollarSign, Pencil, Plus, Ruler } from 'lucide-react'
+import { Activity, CalendarCheck2, CalendarX2, CircleDollarSign, Pencil, Plus, Ruler, Trash2 } from 'lucide-react'
 import { appService } from '../services/appService'
 import { useCycle } from '../context/CycleContext'
 import { useAuth } from '../context/AuthContext'
@@ -9,12 +9,14 @@ import { money, number, roleLabels, rolePlural } from '../lib/format'
 import Modal from '../components/Modal'
 import EmptyState from '../components/EmptyState'
 import PersonDetailsModal from '../components/PersonDetailsModal'
+import { useFeedback } from '../context/FeedbackContext'
 
 export default function PeoplePage() {
   const { role = 'engineer' } = useParams()
   const { monthKey, selectedCycle } = useCycle()
   const { permissions } = useAuth()
   const queryClient = useQueryClient()
+  const feedback = useFeedback()
   const [editing, setEditing] = useState(null)
   const [details, setDetails] = useState(null)
 
@@ -29,15 +31,60 @@ export default function PeoplePage() {
     }))
   }, [statsQuery.data, peopleQuery.data])
 
+  const refreshPeople = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['people'] })
+    await queryClient.invalidateQueries({ queryKey: ['references'] })
+    await queryClient.invalidateQueries({ queryKey: ['cycle-data'] })
+  }
+
   const saveMutation = useMutation({
     mutationFn: appService.savePerson,
-    onSuccess: async () => {
+    onSuccess: async (_data, variables) => {
       setEditing(null)
-      await queryClient.invalidateQueries({ queryKey: ['people'] })
-      await queryClient.invalidateQueries({ queryKey: ['references'] })
-      await queryClient.invalidateQueries({ queryKey: ['cycle-data'] })
+      await refreshPeople()
+      feedback.success(variables.id ? 'تم تحديث بيانات الشخص' : 'تم إضافة الاسم', 'تم حفظ التغيير بنجاح.')
     },
+    onError: (err) => feedback.error('تعذر حفظ بيانات الشخص', err.message || 'حدث خطأ غير متوقع'),
   })
+
+  const deleteMutation = useMutation({
+    mutationFn: appService.deletePerson,
+    onError: (err) => feedback.error('تعذر حذف الشخص', err.message || 'حدث خطأ غير متوقع'),
+  })
+
+  const removePerson = async (person) => {
+    const accepted = await feedback.confirm({
+      title: 'حذف الشخص؟',
+      message: 'سيتم الحذف فقط إذا لم يكن الاسم مرتبطًا بأي بيانات تاريخية.',
+      details: `${person.name} · ${roleLabels[person.role]}`,
+      confirmLabel: 'فحص وحذف',
+      cancelLabel: 'رجوع',
+      tone: 'danger',
+    })
+    if (!accepted) return
+
+    const result = await deleteMutation.mutateAsync(person.id)
+    if (result?.blocked) {
+      const links = Number(result.submission_links || 0)
+      const absences = Number(result.absence_links || 0)
+      const notes = Number(result.note_links || 0)
+      const disable = await feedback.confirm({
+        title: 'لا يمكن حذف الاسم بسبب التاريخ',
+        message: 'الاسم مرتبط ببيانات قديمة ويجب الحفاظ عليها. يمكن تعطيله بدل الحذف حتى لا يظهر في الإدخالات الجديدة.',
+        details: `عمليات: ${links} · غياب: ${absences} · ملاحظات: ${notes}`,
+        confirmLabel: person.active ? 'تعطيل الاسم' : 'إغلاق',
+        cancelLabel: 'رجوع',
+        tone: person.active ? 'primary' : 'danger',
+      })
+      if (disable && person.active) {
+        await saveMutation.mutateAsync({ id: person.id, name: person.name, role: person.role, active: false })
+      }
+      return
+    }
+
+    await refreshPeople()
+    feedback.success('تم حذف الشخص', `تم حذف ${person.name} نهائيًا لأنه غير مرتبط ببيانات تاريخية.`)
+  }
 
   const showDetails = (person) => setDetails(person)
 
@@ -53,7 +100,7 @@ export default function PeoplePage() {
       <section className="people-grid">
         {rows.map((person) => (
           <article className={`person-card-v2 ${!person.active ? 'inactive' : ''}`} key={person.id}>
-            <div className="person-card-head"><div className="person-avatar">{person.name.slice(0, 1)}</div><div className="person-identity"><strong>{person.name}</strong><span>{roleLabels[role]} · {person.active ? 'نشط' : 'معطل'}</span></div>{permissions.canManagePeople ? <button className="icon-btn small" onClick={() => setEditing(person)}><Pencil size={15} /></button> : null}</div>
+            <div className="person-card-head"><div className="person-avatar">{person.name.slice(0, 1)}</div><div className="person-identity"><strong>{person.name}</strong><span>{roleLabels[role]} · {person.active ? 'نشط' : 'معطل'}</span></div>{permissions.canManagePeople ? <div className="card-head-actions"><button className="icon-btn small" title="تعديل" onClick={() => setEditing(person)}><Pencil size={15} /></button><button className="icon-btn small danger" title="حذف" onClick={() => removePerson(person)}><Trash2 size={15} /></button></div> : null}</div>
             <div className="person-metrics">
               <div><Activity size={15} /><span>المهام</span><strong>{number(person.tasks)}</strong></div>
               <div><Ruler size={15} /><span>الأمتار</span><strong>{number(person.meters)}</strong></div>
