@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BarChart3, Database, ShieldCheck, Sparkles } from 'lucide-react'
+import { BarChart3, Database, Eye, EyeOff, ShieldCheck, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 export default function LoginPage() {
@@ -8,6 +8,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const submit = async (event) => {
     event.preventDefault()
@@ -46,7 +47,27 @@ export default function LoginPage() {
           <h2>تسجيل الدخول</h2>
           <p>ادخل بحسابك المسجل في النظام، وسيتم تحميل الواجهة المناسبة لصلاحيتك تلقائيًا.</p>
           <label className="field"><span>البريد الإلكتروني</span><input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
-          <label className="field"><span>كلمة المرور</span><input type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} /></label>
+          <label className="field">
+            <span>كلمة المرور</span>
+            <div className="password-field">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                className="password-toggle"
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                title={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+              >
+                {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+              </button>
+            </div>
+          </label>
           {(error || authError) ? <div className="form-error">{error || authError}</div> : null}
           <button className="btn btn-primary btn-wide" type="submit" disabled={submitting}>{submitting ? 'جاري الدخول...' : 'دخول للنظام'}</button>
         </form>
