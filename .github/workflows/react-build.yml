@@ -1,11 +1,9 @@
 name: React Build
-# UI/UX v2 validation retry 2
 
 on:
   push:
     branches:
       - react-rebuild
-      - ui-ux-v2
     paths-ignore:
       - package-lock.json
 
