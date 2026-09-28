@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { BriefcaseBusiness, CalendarCheck2, CalendarX2, CircleDollarSign, Ruler, Search } from 'lucide-react'
+import { BriefcaseBusiness, CalendarCheck2, CalendarX2, CircleDollarSign, Ruler, Search, RotateCcw } from 'lucide-react'
 import { appService } from '../services/appService'
 import { date, money, number } from '../lib/format'
 import Modal from './Modal'
@@ -16,6 +16,8 @@ export default function PersonDetailsModal({ person, selectedCycle, monthKey, on
   const [project, setProject] = useState('')
   const [section, setSection] = useState('')
   const [attendanceStatus, setAttendanceStatus] = useState('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
 
   const query = useQuery({
     queryKey: ['person-full-details', person?.id, monthKey],
@@ -39,21 +41,25 @@ export default function PersonDetailsModal({ person, selectedCycle, monthKey, on
   const filteredOperations = useMemo(() => data.operations.filter((row) => {
     if (project && row.project !== project) return false
     if (section && row.section !== section) return false
+    if (fromDate && row.work_date < fromDate) return false
+    if (toDate && row.work_date > toDate) return false
     if (search.trim()) {
       const haystack = [row.work_date, row.project, row.section, row.partners, row.meters, row.share_amount].join(' ').toLowerCase()
       if (!haystack.includes(search.trim().toLowerCase())) return false
     }
     return true
-  }), [data.operations, project, section, search])
+  }), [data.operations, project, section, search, fromDate, toDate])
 
   const filteredAttendance = useMemo(() => data.attendance.filter((row) => {
     if (attendanceStatus && row.status !== attendanceStatus) return false
+    if (fromDate && row.attendance_date < fromDate) return false
+    if (toDate && row.attendance_date > toDate) return false
     if (search.trim()) {
       const haystack = [row.attendance_date, statusLabel(row), absenceLabel(row.absence_type), row.note].join(' ').toLowerCase()
       if (!haystack.includes(search.trim().toLowerCase())) return false
     }
     return true
-  }), [data.attendance, attendanceStatus, search])
+  }), [data.attendance, attendanceStatus, search, fromDate, toDate])
 
   const stats = useMemo(() => ({
     tasks: data.operations.length,
@@ -112,6 +118,9 @@ export default function PersonDetailsModal({ person, selectedCycle, monthKey, on
             <select value={project} onChange={(e) => setProject(e.target.value)}><option value="">كل المشاريع</option>{projects.map((item) => <option key={item}>{item}</option>)}</select>
             <select value={section} onChange={(e) => setSection(e.target.value)}><option value="">كل القطاعات</option>{sections.map((item) => <option key={item}>{item}</option>)}</select>
             <select value={attendanceStatus} onChange={(e) => setAttendanceStatus(e.target.value)}><option value="">كل حالات الحضور</option><option value="present">حاضر</option><option value="absent">غياب</option><option value="upcoming">قادم</option></select>
+            <label className="details-date-filter"><span>من</span><input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} /></label>
+            <label className="details-date-filter"><span>إلى</span><input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} /></label>
+            <button className="btn btn-ghost btn-sm clear-filters-btn" type="button" onClick={() => { setSearch(''); setProject(''); setSection(''); setAttendanceStatus(''); setFromDate(''); setToDate('') }}><RotateCcw size={15} /> مسح الفلاتر</button>
             <ExportButtons filename={`${person.name}-${monthKey}-details`} excelSheets={excelSheets} pdfTarget={printRef} compact />
           </section>
 
