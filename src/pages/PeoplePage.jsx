@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { Activity, CalendarCheck2, CalendarX2, CircleDollarSign, Pencil, Plus, Ruler, Trash2 } from 'lucide-react'
@@ -19,6 +19,11 @@ export default function PeoplePage() {
   const feedback = useFeedback()
   const [editing, setEditing] = useState(null)
   const [details, setDetails] = useState(null)
+
+  useEffect(() => {
+    setEditing(null)
+    setDetails(null)
+  }, [role, monthKey])
 
   const statsQuery = useQuery({ queryKey: ['cycle-data', 'people-stats', monthKey, role], queryFn: () => appService.personStats(monthKey, role), enabled: Boolean(monthKey) })
   const peopleQuery = useQuery({ queryKey: ['people', role], queryFn: () => appService.people(role) })
@@ -88,7 +93,7 @@ export default function PeoplePage() {
 
   const showDetails = (person) => setDetails(person)
 
-  const loading = statsQuery.isLoading || peopleQuery.isLoading
+  const loading = statsQuery.isLoading || peopleQuery.isLoading || statsQuery.isFetching || peopleQuery.isFetching
   if (loading) return <div className="page-loader">جاري تحميل بيانات {rolePlural[role] || 'الأفراد'}...</div>
 
   return (
