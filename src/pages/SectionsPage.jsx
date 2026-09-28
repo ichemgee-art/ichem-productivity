@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Plus, Search } from 'lucide-react'
+import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useCycle } from '../context/CycleContext'
 import { appService } from '../services/appService'
@@ -8,11 +8,13 @@ import { money, number } from '../lib/format'
 import Modal from '../components/Modal'
 import EmptyState from '../components/EmptyState'
 import ExportButtons from '../components/ExportButtons'
+import { useFeedback } from '../context/FeedbackContext'
 
 export default function SectionsPage() {
   const { permissions } = useAuth()
   const { monthKey } = useCycle()
   const queryClient = useQueryClient()
+  const feedback = useFeedback()
   const [queryText, setQueryText] = useState('')
   const [activeFilter, setActiveFilter] = useState('')
   const [editing, setEditing] = useState(null)
@@ -20,7 +22,58 @@ export default function SectionsPage() {
 
   const sectionsQuery = useQuery({ queryKey: ['sections'], queryFn: appService.sections })
   const dashboardQuery = useQuery({ queryKey: ['cycle-data', 'dashboard', monthKey], queryFn: () => appService.dashboard(monthKey), enabled: Boolean(monthKey) })
-  const mutation = useMutation({ mutationFn: appService.saveSection, onSuccess: async () => { setEditing(null); await queryClient.invalidateQueries({ queryKey: ['sections'] }); await queryClient.invalidateQueries({ queryKey: ['references'] }); await queryClient.invalidateQueries({ queryKey: ['cycle-data'] }) } })
+  const refreshSections = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['sections'] })
+    await queryClient.invalidateQueries({ queryKey: ['references'] })
+    await queryClient.invalidateQueries({ queryKey: ['cycle-data'] })
+  }
+
+  const mutation = useMutation({
+    mutationFn: appService.saveSection,
+    onSuccess: async (_data, variables) => {
+      setEditing(null)
+      await refreshSections()
+      feedback.success(variables.id ? 'تم تحديث القطاع' : 'تم إضافة القطاع', 'تم حفظ بيانات القطاع بنجاح.')
+    },
+    onError: (err) => feedback.error('تعذر حفظ القطاع', err.message || 'حدث خطأ غير متوقع'),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: appService.deleteSection,
+    onError: (err) => feedback.error('تعذر حذف القطاع', err.message || 'حدث خطأ غير متوقع'),
+  })
+
+  const removeSection = async (section) => {
+    const accepted = await feedback.confirm({
+      title: 'حذف القطاع؟',
+      message: 'سيتم الحذف فقط إذا لم يكن القطاع مستخدمًا في أي عملية تاريخية.',
+      details: `${section.name} · سعر المتر الحالي ${money(section.price_per_meter)}`,
+      confirmLabel: 'فحص وحذف',
+      cancelLabel: 'رجوع',
+      tone: 'danger',
+    })
+    if (!accepted) return
+
+    const result = await deleteMutation.mutateAsync(section.id)
+    if (result?.blocked) {
+      const linked = Number(result.submission_links || 0)
+      const disable = await feedback.confirm({
+        title: 'لا يمكن حذف القطاع بسبب التاريخ',
+        message: 'القطاع مستخدم في عمليات قديمة ويجب الحفاظ عليه للتقارير التاريخية. يمكنك تعطيله حتى لا يظهر في الإدخالات الجديدة.',
+        details: `مرتبط بـ ${linked} عملية تاريخية`,
+        confirmLabel: section.active ? 'تعطيل القطاع' : 'إغلاق',
+        cancelLabel: 'رجوع',
+        tone: section.active ? 'primary' : 'danger',
+      })
+      if (disable && section.active) {
+        await mutation.mutateAsync({ id: section.id, name: section.name, price: section.price_per_meter, active: false })
+      }
+      return
+    }
+
+    await refreshSections()
+    feedback.success('تم حذف القطاع', `تم حذف ${section.name} نهائيًا لأنه غير مرتبط بعمليات تاريخية.`)
+  }
 
   const statMap = useMemo(() => new Map((dashboardQuery.data?.sections || []).map((item) => [item.name, item])), [dashboardQuery.data])
   const rows = useMemo(() => (sectionsQuery.data || []).filter((item) => {
@@ -51,7 +104,7 @@ export default function SectionsPage() {
     <div className="page-stack">
       <section className="panel" ref={exportRef}>
         <div className="filters-bar"><div className="input-with-icon grow"><Search size={16} /><input placeholder="بحث باسم القطاع..." value={queryText} onChange={(e) => setQueryText(e.target.value)} /></div><select value={activeFilter} onChange={(e) => setActiveFilter(e.target.value)}><option value="">كل الحالات</option><option value="active">نشط</option><option value="inactive">معطل</option></select><ExportButtons filename={`sections-${monthKey}`} excelSheets={excelSheets} pdfTarget={exportRef} compact />{permissions.canManageSections ? <button className="btn btn-primary" onClick={() => setEditing({ id: null, name: '', price_per_meter: 0, active: true })}><Plus size={16} /> إضافة قطاع</button> : null}</div>
-        <div className="data-table-wrap"><table className="data-table"><thead><tr><th>القطاع</th><th>سعر المتر الحالي</th><th>الحالة</th><th>مهام الدورة</th><th>أمتار الدورة</th><th>إيراد الدورة</th>{permissions.canManageSections ? <th>إدارة</th> : null}</tr></thead><tbody>{rows.map((row) => { const stats = statMap.get(row.name) || {}; return <tr key={row.id}><td className="strong-cell">{row.name}</td><td>{money(row.price_per_meter)}</td><td><span className={`status-pill ${row.active ? 'success' : 'neutral'}`}>{row.active ? 'نشط' : 'معطل'}</span></td><td>{number(stats.tasks)}</td><td>{number(stats.meters)}</td><td>{money(stats.revenue)}</td>{permissions.canManageSections ? <td><button className="icon-btn small" onClick={() => setEditing(row)}><Pencil size={15} /></button></td> : null}</tr> })}</tbody></table>{!rows.length ? <EmptyState /> : null}</div>
+        <div className="data-table-wrap"><table className="data-table"><thead><tr><th>القطاع</th><th>سعر المتر الحالي</th><th>الحالة</th><th>مهام الدورة</th><th>أمتار الدورة</th><th>إيراد الدورة</th>{permissions.canManageSections ? <th>إدارة</th> : null}</tr></thead><tbody>{rows.map((row) => { const stats = statMap.get(row.name) || {}; return <tr key={row.id}><td className="strong-cell">{row.name}</td><td>{money(row.price_per_meter)}</td><td><span className={`status-pill ${row.active ? 'success' : 'neutral'}`}>{row.active ? 'نشط' : 'معطل'}</span></td><td>{number(stats.tasks)}</td><td>{number(stats.meters)}</td><td>{money(stats.revenue)}</td>{permissions.canManageSections ? <td><div className="row-actions"><button className="icon-btn small" title="تعديل" onClick={() => setEditing(row)}><Pencil size={15} /></button><button className="icon-btn small danger" title="حذف" onClick={() => removeSection(row)}><Trash2 size={15} /></button></div></td> : null}</tr> })}</tbody></table>{!rows.length ? <EmptyState /> : null}</div>
       </section>
       <Modal open={Boolean(editing)} title={editing?.id ? 'تعديل القطاع' : 'إضافة قطاع'} onClose={() => setEditing(null)}>
         {editing ? <SectionForm section={editing} saving={mutation.isPending} onSave={(payload) => mutation.mutateAsync(payload)} /> : null}
