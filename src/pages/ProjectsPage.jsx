@@ -6,7 +6,7 @@ import { appService } from '../services/appService'
 import { date, number } from '../lib/format'
 import Modal from '../components/Modal'
 import EmptyState from '../components/EmptyState'
-import ExportButtons from '../components/ExportButtons'
+import ExportButtons from '../components/ExportButtons'\nimport { smartIncludes } from '../lib/smartSearch'
 
 export default function ProjectsPage() {
   const { permissions } = useAuth()
@@ -22,7 +22,7 @@ export default function ProjectsPage() {
   const rows = useMemo(() => (query.data || []).filter((item) => {
     if (activeFilter === 'active' && !item.active) return false
     if (activeFilter === 'inactive' && item.active) return false
-    if (queryText.trim() && !item.name.toLowerCase().includes(queryText.trim().toLowerCase())) return false
+    if (!smartIncludes(queryText, item.name, item.use_count, item.last_used)) return false
     return true
   }), [query.data, activeFilter, queryText])
 
