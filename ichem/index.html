@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="color-scheme" content="light"/>
+  <title>iChem Productivity System</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.1"></script>
+  <style>
+    :root{
+      --navy:#0b1e3f;--navy2:#102952;--blue:#1d4ed8;--blue2:#3b6ff0;
+      --bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--border:#e1e8f2;
+      --green:#157347;--green-bg:#eaf7ef;--red:#b42318;--red-bg:#fff0ee;
+      --amber:#9a6700;--amber-bg:#fff7df;--gray-bg:#eef2f7;--shadow:0 12px 35px rgba(11,30,63,.08);
+      --r:15px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .hidden{display:none!important}
+
+    .login-page{min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr}
+    .login-brand{background:linear-gradient(145deg,var(--navy),#173d7b);padding:54px;color:#fff;display:flex;flex-direction:column;justify-content:space-between}
+    .brand-mark{display:flex;align-items:center;gap:13px;font-weight:900;font-size:18px}
+    .brand-icon,.mini-logo{background:linear-gradient(135deg,#173d7b,#2758cc);color:#fff;display:grid;place-items:center;font-weight:900}
+    .brand-icon{width:45px;height:45px;border:1px solid rgba(255,255,255,.22);border-radius:13px}
+    .login-brand h1{font-size:42px;line-height:1.25;margin:0 0 16px}
+    .login-brand p{max-width:580px;line-height:1.9;color:rgba(255,255,255,.76);font-size:15px}
+    .brand-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:28px}
+    .brand-stat{border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.06);padding:16px;border-radius:14px}
+    .brand-stat strong{display:block;font-size:21px;margin-bottom:5px}.brand-stat span{font-size:11px;opacity:.68}
+    .login-wrap{display:grid;place-items:center;padding:34px}
+    .login-card{width:min(440px,100%);background:#fff;padding:30px;border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow)}
+    .eyebrow{font-size:10px;letter-spacing:1.5px;color:var(--blue);font-weight:900}
+    .login-card h2{margin:8px 0 7px;color:var(--navy);font-size:26px}.login-card p{color:var(--muted);font-size:13px;line-height:1.7;margin:0 0 24px}
+    .field{margin-bottom:14px}.field label{display:block;font-size:12px;font-weight:800;margin-bottom:7px}
+    .input, .field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid #d9e1ec;border-radius:10px;outline:0;background:#fbfcfe;color:var(--text)}
+    .field textarea{min-height:90px;resize:vertical}
+    .input:focus,.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,78,216,.08)}
+    .login-error{display:none;margin-top:12px;padding:11px;border-radius:10px;background:var(--red-bg);color:var(--red);font-size:12px}
+
+    .btn{border:0;border-radius:10px;padding:10px 13px;font-weight:850;transition:.15s;white-space:nowrap}
+    .btn:hover{transform:translateY(-1px)}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    .btn-primary{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff}
+    .btn-light{background:#edf2f8;color:var(--navy)}.btn-danger{background:var(--red-bg);color:var(--red)}
+    .btn-green{background:var(--green-bg);color:var(--green)}.btn-amber{background:var(--amber-bg);color:var(--amber)}
+    .btn-sm{padding:7px 9px;font-size:11px}.btn-block{width:100%}
+
+    .topbar{height:68px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 18px;position:sticky;top:0;z-index:50}
+    .topbar-right,.topbar-left{display:flex;align-items:center;gap:11px}.mini-logo{width:39px;height:39px;border-radius:11px}
+    .topbar h3{margin:0;font-size:14px;color:var(--navy)}.topbar small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+    .role-badge{font-size:10px;font-weight:900;padding:6px 9px;border-radius:999px;background:#eaf0ff;color:var(--blue)}
+
+    .layout{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:calc(100vh - 68px)}
+    .sidebar{background:#0d254e;color:#fff;padding:16px 11px;position:sticky;top:68px;height:calc(100vh - 68px);overflow:auto}
+    .nav-title{font-size:9px;letter-spacing:1.3px;color:rgba(255,255,255,.42);font-weight:900;padding:13px 10px 7px}
+    .nav-item{width:100%;border:0;background:transparent;color:rgba(255,255,255,.75);padding:11px 12px;border-radius:9px;text-align:right;font-weight:800;margin:2px 0;font-size:13px}
+    .nav-item.active,.nav-item:hover{background:rgba(255,255,255,.1);color:#fff}
+    .nav-item.new-entry{background:rgba(59,111,240,.22);color:#fff;border:1px solid rgba(123,161,255,.18)}
+    .nav-icon{display:inline-block;width:22px;color:#8eb2ff}
+
+    main{padding:20px;min-width:0}
+    .page{display:none}.page.active{display:block}
+    .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:16px}
+    .page-head h1{margin:0;color:var(--navy);font-size:24px}.page-head p{margin:5px 0 0;color:var(--muted);font-size:11px}
+    .head-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .cycle-box{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--border);padding:7px;border-radius:11px}
+    .cycle-box input{border:0;outline:0;background:transparent;padding:5px}
+
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:15px}
+    .stat{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 5px 18px rgba(11,30,63,.04)}
+    .stat .k{font-size:10px;color:var(--muted);font-weight:800}.stat .v{font-size:23px;color:var(--navy);font-weight:950;margin-top:7px}.stat .s{font-size:9px;color:var(--muted);margin-top:4px}
+
+    .panel{background:#fff;border:1px solid var(--border);border-radius:var(--r);box-shadow:0 5px 20px rgba(11,30,63,.04);overflow:hidden;margin-bottom:15px}
+    .panel-head{padding:14px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .panel-title{font-weight:950;color:var(--navy);font-size:14px}.panel-sub{font-size:10px;color:var(--muted);margin-top:3px}
+    .panel-body{padding:15px}
+    .filters{display:grid;grid-template-columns:1.4fr repeat(3,minmax(120px,.6fr));gap:8px;padding:11px 15px;border-bottom:1px solid var(--border);background:#fbfcfe}
+    .filters input,.filters select{width:100%;border:1px solid #dce3ed;border-radius:9px;padding:9px 10px;outline:0;background:#fff}
+
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .mini-table{width:100%;border-collapse:collapse;font-size:11px}.mini-table th,.mini-table td{padding:9px;border-bottom:1px solid #edf1f5;text-align:right}.mini-table th{color:var(--muted);font-size:10px}
+    .table-wrap{overflow:auto;max-height:calc(100vh - 330px)}
+    table.data-table{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%;font-size:11px}
+    .data-table th,.data-table td{border-bottom:1px solid #edf1f5;border-left:1px solid #f0f3f7;padding:9px 10px;white-space:nowrap;text-align:center}
+    .data-table th{position:sticky;top:0;background:#f4f7fc;color:#334155;font-size:10px;z-index:3}
+    .data-table tbody tr:hover td{background:#f8fafd}
+    .cell-strong{font-weight:900;color:var(--navy)}
+    .badge{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;font-weight:850;font-size:9px}
+    .ok{background:var(--green-bg);color:var(--green)}.wait{background:var(--amber-bg);color:var(--amber)}.bad{background:var(--red-bg);color:var(--red)}.neutral{background:var(--gray-bg);color:#475569}.blue{background:#eaf0ff;color:#2852b8}
+    .actions{display:flex;gap:5px;justify-content:center}
+    .pagination{padding:11px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--border)}
+    .pagination-info{font-size:10px;color:var(--muted)}.pager{display:flex;gap:6px}.pager button{padding:7px 10px;border:1px solid var(--border);background:#fff;border-radius:8px}.pager button:disabled{opacity:.35}
+
+    .form-card{background:#fff;border:1px solid var(--border);border-radius:15px;padding:18px;box-shadow:0 5px 20px rgba(11,30,63,.04)}
+    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}.form-grid .span-2{grid-column:span 2}
+    .hint{font-size:10px;color:var(--muted);line-height:1.7;margin-top:5px}
+    .section-title{font-size:13px;font-weight:950;color:var(--navy);margin:18px 0 9px;padding-top:14px;border-top:1px solid var(--border)}
+    .pickers{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .picker{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fbfcfe}
+    .picker-head{padding:10px 11px;border-bottom:1px solid var(--border);background:#fff}
+    .picker-head strong{display:block;font-size:12px;color:var(--navy);margin-bottom:7px}
+    .picker-search{width:100%;border:1px solid #dce3ed;border-radius:8px;padding:8px;outline:0}
+    .picker-list{max-height:185px;overflow:auto;padding:6px}
+    .pick-row{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;font-size:11px}
+    .pick-row:hover{background:#eef3fa}.pick-row input{width:16px;height:16px}.pick-row.inactive{opacity:.55}
+    .preview{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+    .preview-box{background:#f7f9fd;border:1px solid var(--border);border-radius:11px;padding:11px}.preview-box small{display:block;color:var(--muted);font-size:9px}.preview-box strong{display:block;color:var(--navy);font-size:16px;margin-top:5px}
+    .form-footer{display:flex;gap:8px;justify-content:flex-start;margin-top:17px}
+
+    .manage-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:10px}
+    .person-card{border:1px solid var(--border);border-radius:13px;padding:13px;background:#fff}
+    .person-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.person-name{font-weight:950;color:var(--navy)}
+    .person-meta{font-size:10px;color:var(--muted);margin-top:4px}.person-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:11px 0}
+    .person-stat{background:#f7f9fd;border-radius:9px;padding:8px;text-align:center}.person-stat b{display:block;color:var(--navy);font-size:13px}.person-stat span{font-size:8px;color:var(--muted)}
+    .person-actions{display:flex;gap:6px;flex-wrap:wrap}
+
+    .status-strip{display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:10px;color:var(--muted)}
+    .callout{padding:12px 14px;border-radius:11px;background:#eef4ff;border:1px solid #d7e4ff;color:#234a9f;font-size:11px;line-height:1.7;margin-bottom:13px}
+    .empty{padding:34px;text-align:center;color:var(--muted);font-size:12px}
+
+    .modal-backdrop{position:fixed;inset:0;background:rgba(8,22,47,.48);backdrop-filter:blur(2px);display:grid;place-items:center;padding:20px;z-index:100}
+    .modal{width:min(980px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:17px;box-shadow:0 25px 70px rgba(0,0,0,.25)}
+    .modal.small{width:min(520px,96vw)}
+    .modal-head{position:sticky;top:0;background:#fff;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
+    .modal-head h3{margin:0;color:var(--navy);font-size:15px}.modal-body{padding:16px}.close-btn{border:0;background:#eef2f7;width:34px;height:34px;border-radius:9px;font-weight:900;color:var(--navy)}
+    .loading{position:fixed;inset:0;background:rgba(244,247,251,.72);backdrop-filter:blur(2px);display:grid;place-items:center;z-index:150}
+    .loader-card{background:#fff;border:1px solid var(--border);padding:17px 21px;border-radius:13px;box-shadow:var(--shadow);font-weight:850;color:var(--navy)}
+    .spin{width:17px;height:17px;border:2px solid #d5dded;border-top-color:var(--blue);display:inline-block;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-left:8px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .toast{position:fixed;left:20px;bottom:20px;max-width:420px;background:#10284f;color:#fff;border-radius:11px;padding:12px 14px;box-shadow:var(--shadow);font-size:11px;z-index:200;display:none;line-height:1.6}
+    .toast.error{background:#7f1d1d}
+
+    @media(max-width:1050px){
+      .layout{grid-template-columns:1fr}.sidebar{display:none}.stats{grid-template-columns:repeat(2,1fr)}
+      .grid-3{grid-template-columns:1fr 1fr}.pickers{grid-template-columns:1fr 1fr}
+    }
+    @media(max-width:760px){
+      main{padding:13px}.login-page{grid-template-columns:1fr}.login-brand{display:none}
+      .topbar{padding:0 10px}.topbar-left small{display:none}.page-head{align-items:stretch;flex-direction:column}
+      .filters{grid-template-columns:1fr}.grid-2,.grid-3,.form-grid,.pickers{grid-template-columns:1fr}
+      .form-grid .span-2{grid-column:span 1}.preview{grid-template-columns:1fr 1fr}
+      .stats{grid-template-columns:1fr 1fr}.table-wrap{max-height:none}
+    }
+  </style>
+</head>
+<body>
+
+<div id="loginPage" class="login-page">
+  <section class="login-brand">
+    <div class="brand-mark"><div class="brand-icon">iC</div><div>iChem Productivity System</div></div>
+    <div>
+      <div class="eyebrow" style="color:#92b5ff;margin-bottom:12px">ENGINEERING OPERATIONS PLATFORM</div>
+      <h1>إدارة الإنتاجية<br/>من مكان واحد.</h1>
+      <p>تسجيل، مراجعة، تعديل، حذف، متابعة الفرق، الحضور والغياب، المشاريع والقطاعات والأسعار — مباشرة من قاعدة بيانات Supabase.</p>
+      <div class="brand-stats">
+        <div class="brand-stat"><strong>26 → 25</strong><span>دورة الإنتاجية</span></div>
+        <div class="brand-stat"><strong>CRUD</strong><span>إضافة / تعديل / حذف</span></div>
+        <div class="brand-stat"><strong>RLS</strong><span>صلاحيات آمنة</span></div>
+      </div>
+    </div>
+    <small style="opacity:.45">Internal Engineering Operations System</small>
+  </section>
+  <section class="login-wrap">
+    <form id="loginForm" class="login-card">
+      <div class="eyebrow">SECURE ACCESS</div>
+      <h2>تسجيل الدخول</h2>
+      <p>استخدم حساب Supabase Auth الخاص بالنظام.</p>
+      <div class="field"><label>البريد الإلكتروني</label><input id="email" type="email" required autocomplete="email"/></div>
+      <div class="field"><label>كلمة المرور</label><input id="password" type="password" required autocomplete="current-password"/></div>
+      <button id="loginBtn" class="btn btn-primary btn-block" type="submit">دخول للنظام</button>
+      <div id="loginError" class="login-error"></div>
+    </form>
+  </section>
+</div>
+
+<div id="app" class="hidden">
+  <header class="topbar">
+    <div class="topbar-right">
+      <div class="mini-logo">iC</div>
+      <div><h3>iChem Productivity</h3><small>Engineering Operations System</small></div>
+    </div>
+    <div class="topbar-left">
+      <span id="userRole" class="role-badge">—</span>
+      <div><h3 id="userName">—</h3><small id="userEmail">—</small></div>
+      <button id="logoutBtn" class="btn btn-light">خروج</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="nav-title">MAIN</div>
+      <button class="nav-item active" data-page="dashboard"><span class="nav-icon">▦</span>لوحة الإنتاجية</button>
+      <button class="nav-item" data-page="data"><span class="nav-icon">▤</span>البيانات المحسوبة</button>
+      <button class="nav-item new-entry" data-page="entry" data-write="true"><span class="nav-icon">＋</span>تسجيل إنتاجية جديدة</button>
+
+      <div class="nav-title">OPERATIONS</div>
+      <button class="nav-item" data-page="people" data-role="engineer"><span class="nav-icon">◉</span>المهندسين</button>
+      <button class="nav-item" data-page="people" data-role="technician"><span class="nav-icon">◉</span>الفنيين</button>
+      <button class="nav-item" data-page="people" data-role="assistant"><span class="nav-icon">◉</span>المساعدين</button>
+      <button class="nav-item" data-page="people" data-role="worker"><span class="nav-icon">◉</span>العمال</button>
+      <button class="nav-item" data-page="attendance"><span class="nav-icon">◷</span>الحضور والغياب</button>
+
+      <div class="nav-title">DATA</div>
+      <button class="nav-item" data-page="projects"><span class="nav-icon">⌂</span>المشاريع</button>
+      <button class="nav-item" data-page="sections"><span class="nav-icon">≡</span>القطاعات والأسعار</button>
+    </aside>
+
+    <main>
+      <div class="page-head">
+        <div>
+          <h1 id="globalPageTitle">لوحة الإنتاجية</h1>
+          <p id="globalPageSub">متابعة دورة الإنتاجية والفرق والمشاريع.</p>
+        </div>
+        <div class="head-actions">
+          <div class="cycle-box">
+            <span style="font-size:10px;font-weight:850;color:var(--muted)">دورة العرض</span>
+            <input id="cycleMonth" type="month"/>
+            <button id="applyCycleBtn" class="btn btn-primary btn-sm">عرض</button>
+          </div>
+          <button id="setActiveCycleBtn" class="btn btn-light btn-sm hidden">اعتماد كدورة النظام</button>
+        </div>
+      </div>
+
+      <section id="page-dashboard" class="page active">
+        <div id="cycleLabel" class="callout">تحميل الدورة الحالية...</div>
+        <div class="stats">
+          <div class="stat"><div class="k">عدد العمليات</div><div id="statTasks" class="v">—</div><div class="s">داخل الدورة</div></div>
+          <div class="stat"><div class="k">إجمالي الأمتار</div><div id="statMeters" class="v">—</div><div class="s">متر</div></div>
+          <div class="stat"><div class="k">إجمالي الإنتاجية</div><div id="statRevenue" class="v">—</div><div class="s">جنيه</div></div>
+          <div class="stat"><div class="k">متوسط سعر المتر</div><div id="statAvg" class="v">—</div><div class="s">جنيه / متر</div></div>
+        </div>
+        <div class="grid-2">
+          <section class="panel"><div class="panel-head"><div><div class="panel-title">أعلى المشاريع</div><div class="panel-sub">حسب إجمالي الإنتاجية في الدورة</div></div></div><div class="panel-body" id="dashProjects"></div></section>
+          <section class="panel"><div class="panel-head"><div><div class="panel-title">القطاعات</div><div class="panel-sub">الأمتار والإيراد حسب القطاع</div></div></div><div class="panel-body" id="dashSections"></div></section>
+        </div>
+        <div class="grid-3">
+          <section class="panel"><div class="panel-head"><div class="panel-title">الفنيين</div></div><div class="panel-body" id="dashTechs"></div></section>
+          <section class="panel"><div class="panel-head"><div class="panel-title">المساعدين</div></div><div class="panel-body" id="dashAssistants"></div></section>
+          <section class="panel"><div class="panel-head"><div class="panel-title">العمال</div></div><div class="panel-body" id="dashWorkers"></div></section>
+        </div>
+      </section>
+
+      <section id="page-data" class="page">
+        <section class="panel">
+          <div class="panel-head">
+            <div><div class="panel-title">البيانات المحسوبة</div><div class="panel-sub">عرض وتعديل وحذف ومراجعة العمليات.</div></div>
+            <div class="head-actions">
+              <button class="btn btn-primary btn-sm" data-go-entry data-write="true">＋ إضافة عملية</button>
+              <button id="refreshDataBtn" class="btn btn-light btn-sm">↻ تحديث</button>
+            </div>
+          </div>
+          <div class="filters">
+            <input id="dataSearch" placeholder="بحث في المشروع، القطاع، المهندس أو الفريق..."/>
+            <select id="dataProject"><option value="">كل المشاريع</option></select>
+            <select id="dataSection"><option value="">كل القطاعات</option></select>
+            <select id="dataReview"><option value="">كل حالات المراجعة</option><option value="reviewed">تمت المراجعة</option><option value="not_reviewed">لم تتم المراجعة</option></select>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr>
+                <th>التاريخ</th><th>المشروع</th><th>المهندس</th><th>الفنيين</th><th>عدد الفنيين</th>
+                <th>المساعدين</th><th>عدد المساعدين</th><th>القطاع</th><th>الأمتار</th><th>سعر المتر</th>
+                <th>الإجمالي</th><th>إجمالي الفنيين</th><th>نصيب كل فني</th><th>إجمالي المساعدين</th>
+                <th>نصيب كل مساعد</th><th>العمال</th><th>عدد العمال</th><th>إجمالي العمال</th>
+                <th>نصيب كل عامل</th><th>المراجعة</th><th>إدارة</th>
+              </tr></thead>
+              <tbody id="dataBody"></tbody>
+            </table>
+            <div id="dataEmpty" class="empty hidden">لا توجد بيانات مطابقة.</div>
+          </div>
+          <div class="pagination"><div id="dataPageInfo" class="pagination-info">—</div><div class="pager"><button id="dataPrev">السابق</button><button id="dataNext">التالي</button></div></div>
+        </section>
+      </section>
+
+      <section id="page-entry" class="page">
+        <div class="callout">دي شاشة الإدخال الجديدة. اختار التاريخ والفريق والمشروع والقطاع والأمتار، والنظام يحسب السعر والإجمالي والأنصبة تلقائيًا عند الحفظ.</div>
+        <div id="entryFormHost"></div>
+      </section>
+
+      <section id="page-people" class="page">
+        <section class="panel">
+          <div class="panel-head">
+            <div><div id="peopleTitle" class="panel-title">الأفراد</div><div class="panel-sub">الإنتاجية والحضور والغياب داخل الدورة المختارة.</div></div>
+            <button id="addPersonBtn" class="btn btn-primary btn-sm admin-only">＋ إضافة اسم</button>
+          </div>
+          <div class="panel-body"><div id="peopleGrid" class="manage-grid"></div></div>
+        </section>
+      </section>
+
+      <section id="page-attendance" class="page">
+        <section class="panel">
+          <div class="panel-head">
+            <div><div class="panel-title">الحضور والغياب</div><div class="panel-sub">الحضور يُستنتج تلقائيًا من عمليات الإنتاجية، ويمكن تصنيف الغياب وإضافة ملاحظات.</div></div>
+            <button id="refreshAttendanceBtn" class="btn btn-light btn-sm">↻ تحديث</button>
+          </div>
+          <div class="filters">
+            <select id="attendanceRole"><option value="">كل الأدوار</option><option value="engineer">المهندسين</option><option value="technician">الفنيين</option><option value="assistant">المساعدين</option><option value="worker">العمال</option></select>
+            <select id="attendancePerson"><option value="">كل الأشخاص</option></select>
+            <select id="attendanceStatus"><option value="">كل الحالات</option><option value="present">حاضر</option><option value="absent">غياب</option><option value="upcoming">قادم</option></select>
+            <input id="attendanceSearch" placeholder="بحث بالاسم أو التاريخ..."/>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>الشخص</th><th>الدور</th><th>التاريخ</th><th>الحالة</th><th>نوع الغياب</th><th>الملاحظة</th><th>حفظ</th></tr></thead>
+              <tbody id="attendanceBody"></tbody>
+            </table>
+            <div id="attendanceEmpty" class="empty hidden">لا توجد بيانات.</div>
+          </div>
+          <div class="pagination"><div id="attendancePageInfo" class="pagination-info">—</div><div class="pager"><button id="attendancePrev">السابق</button><button id="attendanceNext">التالي</button></div></div>
+        </section>
+      </section>
+
+      <section id="page-projects" class="page">
+        <section class="panel">
+          <div class="panel-head">
+            <div><div class="panel-title">المشاريع</div><div class="panel-sub">إضافة أو تعديل أو تعطيل مشروع. التعطيل لا يمسح التاريخ القديم.</div></div>
+            <button id="addProjectBtn" class="btn btn-primary btn-sm admin-only">＋ مشروع جديد</button>
+          </div>
+          <div class="filters" style="grid-template-columns:1fr 180px">
+            <input id="projectSearch" placeholder="بحث باسم المشروع..."/>
+            <select id="projectActiveFilter"><option value="">الكل</option><option value="active">نشط</option><option value="inactive">معطل</option></select>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table"><thead><tr><th>المشروع</th><th>الحالة</th><th>عدد الاستخدامات</th><th>آخر استخدام</th><th>إدارة</th></tr></thead><tbody id="projectsBody"></tbody></table>
+          </div>
+        </section>
+      </section>
+
+      <section id="page-sections" class="page">
+        <section class="panel">
+          <div class="panel-head">
+            <div><div class="panel-title">القطاعات والأسعار</div><div class="panel-sub">تعديل السعر يؤثر على العمليات الجديدة فقط؛ التاريخ القديم يحتفظ بسعره.</div></div>
+            <button id="addSectionBtn" class="btn btn-primary btn-sm admin-only">＋ قطاع جديد</button>
+          </div>
+          <div class="filters" style="grid-template-columns:1fr 180px">
+            <input id="sectionSearch" placeholder="بحث باسم القطاع..."/>
+            <select id="sectionActiveFilter"><option value="">الكل</option><option value="active">نشط</option><option value="inactive">معطل</option></select>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table"><thead><tr><th>القطاع</th><th>سعر المتر</th><th>الحالة</th><th>مهام الدورة</th><th>أمتار الدورة</th><th>إيراد الدورة</th><th>إدارة</th></tr></thead><tbody id="sectionsBody"></tbody></table>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+</div>
+
+<div id="modalBackdrop" class="modal-backdrop hidden">
+  <div id="modalCard" class="modal">
+    <div class="modal-head"><h3 id="modalTitle">—</h3><button id="modalClose" class="close-btn">×</button></div>
+    <div id="modalBody" class="modal-body"></div>
+  </div>
+</div>
+
+<div id="loading" class="loading hidden"><div class="loader-card"><span class="spin"></span><span id="loadingText">جاري التحميل...</span></div></div>
+<div id="toast" class="toast"></div>
+
+<script>
+const SUPABASE_URL='https://jqzkrltfgjdoowrrtqcv.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_qIzq0Kb-31ab9eDVYst3Rg_mxIKkgGI';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+
+const $=id=>document.getElementById(id);
+const ROLE_AR={engineer:'مهندس',technician:'فني',assistant:'مساعد ممتاز',worker:'عامل'};
+const ROLE_PLURAL={engineer:'المهندسين',technician:'الفنيين',assistant:'المساعدين',worker:'العمال'};
+
+const state={
+  session:null,profile:null,currentPage:'dashboard',peopleRole:'engineer',
+  monthKey:null,bounds:null,dashboard:null,
+  people:[],sections:[],projects:[],
+  dataRows:[],dataFiltered:[],dataPage:1,dataPageSize:50,
+  attendanceRows:[],attendanceFiltered:[],attendancePage:1,attendancePageSize:60
+};
+
+const isAdmin=()=>state.profile?.app_role==='admin';
+const canWrite=()=>['admin','data_entry'].includes(state.profile?.app_role);
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const fmt=n=>new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(Number(n||0));
+const localToday=()=>{const d=new Date();const z=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`};
+const fmtDate=s=>{if(!s)return'—';const [y,m,d]=String(s).slice(0,10).split('-');return `${d}/${m}/${y}`};
+
+function loading(on,text='جاري التحميل...'){$('loadingText').textContent=text;$('loading').classList.toggle('hidden',!on)}
+function toast(msg,type='ok'){const t=$('toast');t.textContent=msg;t.className='toast'+(type==='error'?' error':'');t.style.display='block';clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.style.display='none',3300)}
+function errMsg(e){return e?.message||e?.details||String(e||'حدث خطأ')}
+function showLoginError(msg){$('loginError').textContent=msg;$('loginError').style.display='block'}
+function clearLoginError(){$('loginError').style.display='none';$('loginError').textContent=''}
+
+function openModal(title,html,small=false){
+  $('modalTitle').textContent=title;$('modalBody').innerHTML=html;$('modalCard').classList.toggle('small',small);$('modalBackdrop').classList.remove('hidden')
+}
+function closeModal(){$('modalBackdrop').classList.add('hidden');$('modalBody').innerHTML=''}
+$('modalClose').onclick=closeModal;
+$('modalBackdrop').addEventListener('click',e=>{if(e.target===$('modalBackdrop'))closeModal()});
+
+async function init(){
+  const {data:{session}}=await db.auth.getSession();
+  if(session)await enterApp(session);else showLogin();
+  db.auth.onAuthStateChange(async(_event,session)=>{if(!session)showLogin()});
+}
+function showLogin(){state.session=null;$('app').classList.add('hidden');$('loginPage').classList.remove('hidden')}
+async function enterApp(session){
+  state.session=session;loading(true,'جاري تجهيز النظام...');
+  try{
+    const {data:profile,error}=await db.from('profiles').select('display_name,app_role').eq('user_id',session.user.id).single();
+    if(error)throw error;
+    state.profile=profile;
+    $('userName').textContent=profile.display_name||'مستخدم';$('userRole').textContent=(profile.app_role||'viewer').toUpperCase();$('userEmail').textContent=session.user.email||'';
+    $('loginPage').classList.add('hidden');$('app').classList.remove('hidden');
+    document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()));
+    document.querySelectorAll('[data-write="true"]').forEach(el=>el.classList.toggle('hidden',!canWrite()));
+    $('setActiveCycleBtn').classList.toggle('hidden',!isAdmin());
+
+    await loadReferences();
+    const {data:mk,error:mErr}=await db.rpc('active_cycle_month_key');if(mErr)throw mErr;
+    state.monthKey=mk;$('cycleMonth').value=mk;await setCycle(mk,false);await showPage('dashboard');
+  }catch(e){console.error(e);showLoginError(errMsg(e));await db.auth.signOut()}
+  finally{loading(false)}
+}
+$('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();clearLoginError();const b=$('loginBtn');b.disabled=true;b.textContent='جاري الدخول...';
+  const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+  b.disabled=false;b.textContent='دخول للنظام';if(error){showLoginError('تعذر تسجيل الدخول: '+error.message);return}if(data.session)await enterApp(data.session)
+});
+$('logoutBtn').onclick=()=>db.auth.signOut();
+
+async function loadReferences(){
+  const [p,s,pr]=await Promise.all([
+    db.from('people').select('id,name,role,active').order('role').order('name'),
+    db.from('sections').select('id,name,price_per_meter,active').order('name'),
+    db.from('projects').select('id,name,active,created_at').order('name')
+  ]);
+  if(p.error)throw p.error;if(s.error)throw s.error;if(pr.error)throw pr.error;
+  state.people=p.data||[];state.sections=s.data||[];state.projects=pr.data||[];
+}
+async function setCycle(monthKey,reload=true){
+  const {data,error}=await db.rpc('cycle_bounds',{p_month_key:monthKey});if(error)throw error;
+  state.monthKey=monthKey;state.bounds=Array.isArray(data)?data[0]:data;$('cycleMonth').value=monthKey;
+  $('cycleLabel').textContent=`الدورة المعروضة: من ${fmtDate(state.bounds.cycle_start)} إلى ${fmtDate(state.bounds.cycle_end)}`;
+  state.dashboard=null;state.dataRows=[];state.attendanceRows=[];
+  if(reload)await showPage(state.currentPage,state.currentPage==='people'?state.peopleRole:null,true)
+}
+$('applyCycleBtn').onclick=async()=>{try{loading(true);await setCycle($('cycleMonth').value,true)}catch(e){toast(errMsg(e),'error')}finally{loading(false)}};
+$('setActiveCycleBtn').onclick=async()=>{
+  if(!isAdmin())return;
+  try{loading(true,'جاري اعتماد الدورة...');const {error}=await db.rpc('set_active_cycle',{p_month_key:$('cycleMonth').value});if(error)throw error;toast('تم اعتماد الدورة كدورة النظام')}catch(e){toast(errMsg(e),'error')}finally{loading(false)}
+};
+
+const PAGE_INFO={
+  dashboard:['لوحة الإنتاجية','ملخص الدورة والفرق والمشاريع.'],
+  data:['البيانات المحسوبة','عرض وتعديل وحذف ومراجعة العمليات.'],
+  entry:['تسجيل إنتاجية جديدة','إدخال عملية جديدة وحساب الأنصبة تلقائيًا.'],
+  people:['الأفراد','متابعة الإنتاجية والحضور لكل شخص.'],
+  attendance:['الحضور والغياب','التصنيف والملاحظات حسب دورة 26 → 25.'],
+  projects:['المشاريع','إدارة قائمة المشاريع المستخدمة في التسجيل.'],
+  sections:['القطاعات والأسعار','إدارة القطاعات وأسعار المتر.']
+};
+document.querySelectorAll('.nav-item[data-page]').forEach(btn=>btn.addEventListener('click',()=>showPage(btn.dataset.page,btn.dataset.role||null)));
+document.querySelectorAll('[data-go-entry]').forEach(btn=>btn.addEventListener('click',()=>showPage('entry')));
+async function showPage(page,role=null,force=false){
+  state.currentPage=page;if(role)state.peopleRole=role;
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  const selector=page==='people'?`.nav-item[data-page="people"][data-role="${state.peopleRole}"]`:`.nav-item[data-page="${page}"]`;
+  document.querySelector(selector)?.classList.add('active');
+  const [t,s]=PAGE_INFO[page];$('globalPageTitle').textContent=page==='people'?ROLE_PLURAL[state.peopleRole]:t;$('globalPageSub').textContent=s;
+  try{
+    if(page==='dashboard')await loadDashboard(force);
+    if(page==='data')await loadData(force);
+    if(page==='entry')renderSubmissionForm($('entryFormHost'),null,'create');
+    if(page==='people')await loadPeoplePage(state.peopleRole);
+    if(page==='attendance')await loadAttendance(force);
+    if(page==='projects')await loadProjects();
+    if(page==='sections')await loadSections();
+  }catch(e){console.error(e);toast(errMsg(e),'error')}
+}
+
+async function loadDashboard(force=false){
+  if(state.dashboard&&!force){renderDashboard();return}
+  loading(true,'جاري تحميل لوحة الإنتاجية...');
+  const {data,error}=await db.rpc('dashboard_data',{p_month_key:state.monthKey});loading(false);if(error)throw error;state.dashboard=data;renderDashboard()
+}
+function smallRankTable(rows,type){
+  const list=(rows||[]).slice(0,7);
+  if(!list.length)return'<div class="empty">لا توجد بيانات في الدورة.</div>';
+  return `<table class="mini-table"><thead><tr><th>الاسم</th><th>المهام</th><th>${type==='person'?'المستحق':'الأمتار'}</th></tr></thead><tbody>`+
+    list.map(x=>`<tr><td class="cell-strong">${esc(x.person_name||x.name)}</td><td>${fmt(x.tasks)}</td><td>${fmt(type==='person'?x.earnings:x.meters)}</td></tr>`).join('')+'</tbody></table>'
+}
+function renderDashboard(){
+  const d=state.dashboard||{},s=d.summary||{};
+  $('statTasks').textContent=fmt(s.tasks);$('statMeters').textContent=fmt(s.meters);$('statRevenue').textContent=fmt(s.revenue);$('statAvg').textContent=fmt(s.avg_price);
+  $('dashProjects').innerHTML=smallRankTable(d.projects,'metric');$('dashSections').innerHTML=smallRankTable(d.sections,'metric');
+  $('dashTechs').innerHTML=smallRankTable(d.technicians,'person');$('dashAssistants').innerHTML=smallRankTable(d.assistants,'person');$('dashWorkers').innerHTML=smallRankTable(d.workers,'person')
+}
+
+async function loadData(force=false){
+  if(state.dataRows.length&&!force){buildDataFilters();applyDataFilters();return}
+  loading(true,'جاري تحميل البيانات المحسوبة...');
+  const {data,error}=await db.from('v_master_data').select('*').gte('work_date',state.bounds.cycle_start).lte('work_date',state.bounds.cycle_end).order('work_date',{ascending:false}).order('submitted_at',{ascending:false}).limit(5000);
+  loading(false);if(error)throw error;state.dataRows=data||[];state.dataPage=1;buildDataFilters();applyDataFilters()
+}
+function buildDataFilters(){
+  const p=[...new Set(state.dataRows.map(x=>x.project).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ar'));
+  const s=[...new Set(state.dataRows.map(x=>x.section).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'en'));
+  const pv=$('dataProject').value,sv=$('dataSection').value;
+  $('dataProject').innerHTML='<option value="">كل المشاريع</option>'+p.map(x=>`<option>${esc(x)}</option>`).join('');
+  $('dataSection').innerHTML='<option value="">كل القطاعات</option>'+s.map(x=>`<option>${esc(x)}</option>`).join('');
+  if(p.includes(pv))$('dataProject').value=pv;if(s.includes(sv))$('dataSection').value=sv
+}
+function applyDataFilters(){
+  const q=$('dataSearch').value.trim().toLowerCase(),p=$('dataProject').value,s=$('dataSection').value,r=$('dataReview').value;
+  state.dataFiltered=state.dataRows.filter(x=>{
+    if(p&&x.project!==p)return false;if(s&&x.section!==s)return false;if(r&&x.review_status!==r)return false;
+    if(q&&!([x.project,x.section,x.engineers,x.technicians,x.assistants,x.workers,x.work_date].join(' ').toLowerCase().includes(q)))return false;return true
+  });
+  const pages=Math.max(1,Math.ceil(state.dataFiltered.length/state.dataPageSize));if(state.dataPage>pages)state.dataPage=pages;renderData()
+}
+function renderData(){
+  const start=(state.dataPage-1)*state.dataPageSize,rows=state.dataFiltered.slice(start,start+state.dataPageSize);
+  $('dataBody').innerHTML=rows.map(x=>`<tr>
+    <td>${fmtDate(x.work_date)}</td><td class="cell-strong">${esc(x.project)}</td><td>${esc(x.engineers||'—')}</td><td>${esc(x.technicians||'—')}</td><td>${fmt(x.technician_count)}</td>
+    <td>${esc(x.assistants||'—')}</td><td>${fmt(x.assistant_count)}</td><td><span class="badge blue">${esc(x.section)}</span></td><td class="cell-strong">${fmt(x.meters)}</td><td>${fmt(x.price_per_meter)}</td>
+    <td class="cell-strong">${fmt(x.total)}</td><td>${fmt(x.tech_share_total)}</td><td>${fmt(x.tech_share_per_person)}</td><td>${fmt(x.assistant_share_total)}</td><td>${fmt(x.assistant_share_per_person)}</td>
+    <td>${esc(x.workers||'—')}</td><td>${fmt(x.worker_count)}</td><td>${fmt(x.worker_share_total)}</td><td>${fmt(x.worker_share_per_person)}</td>
+    <td>${x.review_status==='reviewed'?'<span class="badge ok">تمت المراجعة</span>':'<span class="badge wait">لم تتم المراجعة</span>'}</td>
+    <td><div class="actions">
+      ${isAdmin()?`<button class="btn btn-sm ${x.review_status==='reviewed'?'btn-amber':'btn-green'}" onclick="toggleReview('${x.id}',${x.review_status!=='reviewed'})">${x.review_status==='reviewed'?'إلغاء المراجعة':'مراجعة'}</button>
+      <button class="btn btn-sm btn-light" onclick="editSubmission('${x.id}')">تعديل</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteSubmission('${x.id}')">حذف</button>`:'—'}
+    </div></td>
+  </tr>`).join('');
+  $('dataEmpty').classList.toggle('hidden',rows.length>0);
+  const total=state.dataFiltered.length,from=total?start+1:0,to=Math.min(start+state.dataPageSize,total);
+  $('dataPageInfo').textContent=`عرض ${from} - ${to} من ${total} سجل`;$('dataPrev').disabled=state.dataPage<=1;$('dataNext').disabled=state.dataPage>=Math.ceil(total/state.dataPageSize)
+}
+['dataSearch','dataProject','dataSection','dataReview'].forEach(id=>$(id).addEventListener(id==='dataSearch'?'input':'change',()=>{state.dataPage=1;applyDataFilters()}));
+$('dataPrev').onclick=()=>{if(state.dataPage>1){state.dataPage--;renderData()}};$('dataNext').onclick=()=>{if(state.dataPage*state.dataPageSize<state.dataFiltered.length){state.dataPage++;renderData()}};
+$('refreshDataBtn').onclick=()=>loadData(true);
+
+async function toggleReview(id,reviewed){
+  try{loading(true,'جاري تحديث حالة المراجعة...');const {error}=await db.rpc('set_review_status',{p_submission_id:id,p_reviewed:reviewed});if(error)throw error;toast('تم تحديث حالة المراجعة');await loadData(true);state.dashboard=null}catch(e){toast(errMsg(e),'error')}finally{loading(false)}
+}
+async function deleteSubmission(id){
+  if(!isAdmin()||!confirm('هل أنت متأكد من حذف العملية؟ الحذف سيزيلها من الإنتاجية والحضور المرتبط بها.'))return;
+  try{loading(true,'جاري حذف العملية...');const {error}=await db.rpc('delete_productivity_submission',{p_submission_id:id});if(error)throw error;toast('تم حذف العملية');state.dashboard=null;await loadData(true)}catch(e){toast(errMsg(e),'error')}finally{loading(false)}
+}
+async function editSubmission(id){
+  const row=state.dataRows.find(x=>x.id===id);if(!row)return toast('العملية غير موجودة','error');
+  try{
+    loading(true,'جاري فتح العملية...');
+    const {data:links,error}=await db.from('submission_people').select('person_id,role').eq('submission_id',id);if(error)throw error;
+    const selected={engineer:[],technician:[],assistant:[],worker:[]};(links||[]).forEach(x=>selected[x.role]?.push(x.person_id));
+    openModal('تعديل العملية','<div id="editSubmissionHost"></div>',false);
+    renderSubmissionForm($('editSubmissionHost'),{...row,selected},'edit');
+  }catch(e){toast(errMsg(e),'error')}finally{loading(false)}
+}
+
+function pickerHtml(role,selected=[],scope='entry',includeInactive=false){
+  const people=state.people.filter(p=>p.role===role&&(includeInactive||p.active||selected.includes(p.id)));
+  return `<div class="picker" data-picker="${scope}-${role}">
+    <div class="picker-head"><strong>${ROLE_PLURAL[role]}</strong><input class="picker-search" data-picker-search="${scope}-${role}" placeholder="بحث..."/></div>
+    <div class="picker-list">${people.map(p=>`<label class="pick-row ${p.active?'':'inactive'}" data-pick-name="${esc(p.name.toLowerCase())}">
+      <input type="checkbox" data-role-check="${role}" value="${p.id}" ${selected.includes(p.id)?'checked':''}/>
+      <span>${esc(p.name)}${p.active?'':' <small>(معطل)</small>'}</span>
+    </label>`).join('')}</div>
+  </div>`
+}
+function renderSubmissionForm(host,row=null,mode='create'){
+  const selected=row?.selected||{engineer:[],technician:[],assistant:[],worker:[]},scope=mode==='create'?'entry':'edit';
+  const activeSections=state.sections.filter(s=>s.active||s.name===row?.section);
+  const projects=state.projects.filter(p=>p.active||p.name===row?.project);
+  host.innerHTML=`<form id="${scope}SubmissionForm" class="form-card">
+    <div class="form-grid">
+      <div class="field"><label>التاريخ</label><input name="work_date" type="date" required value="${esc(row?.work_date||localToday())}"/></div>
+      <div class="field"><label>اسم المشروع</label><input name="project" list="${scope}ProjectList" required value="${esc(row?.project||'')}" placeholder="اكتب أو اختار مشروع"/><datalist id="${scope}ProjectList">${projects.map(p=>`<option value="${esc(p.name)}"></option>`).join('')}</datalist><div class="hint">يمكنك كتابة مشروع جديد، وسيُضاف تلقائيًا عند الحفظ.</div></div>
+      <div class="field"><label>القطاع</label><select name="section" required><option value="">اختار القطاع</option>${activeSections.map(s=>`<option value="${esc(s.name)}" ${s.name===row?.section?'selected':''}>${esc(s.name)} — ${fmt(s.price_per_meter)} جنيه/م</option>`).join('')}</select></div>
+      <div class="field"><label>عدد الأمتار</label><input name="meters" type="number" min="0" step="0.01" required value="${row?.meters??''}" placeholder="0"/></div>
+    </div>
+    <div class="section-title">فريق العمل</div>
+    <div class="pickers">
+      ${pickerHtml('engineer',selected.engineer,scope,mode==='edit')}
+      ${pickerHtml('technician',selected.technician,scope,mode==='edit')}
+      ${pickerHtml('assistant',selected.assistant,scope,mode==='edit')}
+      ${pickerHtml('worker',selected.worker,scope,mode==='edit')}
+    </div>
+    <div class="preview">
+      <div class="preview-box"><small>سعر المتر</small><strong data-preview="price">0</strong></div>
+      <div class="preview-box"><small>الإجمالي</small><strong data-preview="total">0</strong></div>
+      <div class="preview-box"><small>نصيب كل فني</small><strong data-preview="tech">0</strong></div>
+      <div class="preview-box"><small>نصيب كل مساعد</small><strong data-preview="assist">0</strong></div>
+      <div class="preview-box"><small>نصيب كل عامل</small><strong data-preview="worker">0</strong></div>
+    </div>
+    <div class="form-footer"><button class="btn btn-primary" type="submit">${mode==='create'?'حفظ العملية':'حفظ التعديلات'}</button>${mode==='edit'?'<button class="btn btn-light" type="button" onclick="closeModal()">إلغاء</button>':''}</div>
+  </form>`;
+  host.querySelectorAll('[data-picker-search]').forEach(inp=>inp.addEventListener('input',()=>{
+    const key=inp.dataset.pickerSearch,q=inp.value.trim().toLowerCase();
+    host.querySelectorAll(`[data-picker="${key}"] [data-pick-name]`).forEach(r=>r.style.display=r.dataset.pickName.includes(q)?'flex':'none')
+  }));
+  const form=$(`${scope}SubmissionForm`);
+  const preview=()=>updateSubmissionPreview(form);
+  form.querySelectorAll('select,input').forEach(el=>el.addEventListener('change',preview));form.querySelector('[name="meters"]').addEventListener('input',preview);preview();
+  form.addEventListener('submit',e=>saveSubmission(e,row?.id||null,mode))
+}
+function picked(form,role){return [...form.querySelectorAll(`[data-role-check="${role}"]:checked`)].map(x=>x.value)}
+function updateSubmissionPreview(form){
+  const sec=state.sections.find(s=>s.name===form.elements.section.value),meters=Number(form.elements.meters.value||0),price=Number(sec?.price_per_meter||0),total=Math.round(meters*price*100)/100;
+  const nt=picked(form,'technician').length,na=picked(form,'assistant').length,nw=picked(form,'worker').length;
+  let tt=0,aa=0;if(nt&&na){tt=total*.7;aa=total*.3}else if(nt)tt=total;else if(na)aa=total;
+  const set=(k,v)=>form.querySelector(`[data-preview="${k}"]`).textContent=fmt(Math.round(v*100)/100);
+  set('price',price);set('total',total);set('tech',nt?tt/nt:0);set('assist',na?aa/na:0);set('worker',nw?meters*10/nw:0)
+}
+async function saveSubmission(e,id,mode){
+  e.preventDefault();const f=e.currentTarget;
+  const args={
+    p_work_date:f.elements.work_date.value,p_project_name:f.elements.project.value.trim(),p_section_name:f.elements.section.value,p_meters:Number(f.elements.meters.value||0),
+    p_engineer_ids:picked(f,'engineer'),p_technician_ids:picked(f,'technician'),p_assistant_ids:picked(f,'assistant'),p_worker_ids:picked(f,'worker')
+  };
+  if(!args.p_engineer_ids.length)return toast('اختار مهندس واحد على الأقل','error');
+  if(!args.p_project_name)return toast('اسم المشروع مطلوب','error');
+  try{
+    loading(true,mode==='create'?'جاري حفظ العملية...':'جاري حفظ التعديلات...');
+    let res;if(mode==='create')res=await db.rpc('create_productivity_submission',{...args,p_source:'dashboard'});else res=await db.rpc('update_productivity_submission',{p_submission_id:id,...args});
+    if(res.error)throw res.error;toast(mode==='create'?'تم حفظ العملية بنجاح':'تم حفظ التعديلات');
+    if(mode==='edit')closeModal();await loadReferences();state.dashboard=null;state.dataRows=[];renderSubmissionForm($('entryFormHost'),null,'create');await showPage('data',null,true)
+  }catch(e2){toast(errMsg(e2),'error')}finally{loading(false)}
+}
+
+async function loadPeoplePage(role){
+  loading(true,'جاري تحميل بيانات الأفراد...');
+  try{
+    const [statsR,peopleR]=await Promise.all([
+      db.rpc('person_cycle_stats',{p_month_key:state.monthKey,p_role:role}),
+      db.from('people').select('id,name,role,active').eq('role',role).order('active',{ascending:false}).order('name')
+    ]);
+    if(statsR.error)throw statsR.error;if(peopleR.error)throw peopleR.error;
+    const sm=new Map((statsR.data||[]).map(x=>[x.person_id,x]));
+    const rows=(peopleR.data||[]).map(p=>({...p,...(sm.get(p.id)||{tasks:0,meters:0,earnings:0,present_days:0,absent_days:0,upcoming_days:0})}));
+    $('peopleTitle').textContent=ROLE_PLURAL[role];
+    $('peopleGrid').innerHTML=rows.length?rows.map(p=>`<div class="person-card">
+      <div class="person-top"><div><div class="person-name">${esc(p.name)}</div><div class="person-meta">${ROLE_AR[role]} · ${p.active?'نشط':'معطل'}</div></div><span class="badge ${p.active?'ok':'neutral'}">${p.active?'نشط':'معطل'}</span></div>
+      <div class="person-stats">
+        <div class="person-stat"><b>${fmt(p.tasks)}</b><span>مهام</span></div>
+        <div class="person-stat"><b>${fmt(p.meters)}</b><span>متر</span></div>
+        <div class="person-stat"><b>${fmt(p.earnings)}</b><span>مستحق</span></div>
+        <div class="person-stat"><b>${fmt(p.present_days)}</b><span>حضور</span></div>
+        <div class="person-stat"><b>${fmt(p.absent_days)}</b><span>غياب</span></div>
+        <div class="person-stat"><b>${fmt(p.upcoming_days)}</b><span>قادم</span></div>
+      </div>
+      <div class="person-actions"><button class="btn btn-sm btn-light" onclick="personDetails('${p.id}')">التفاصيل</button>
+        ${isAdmin()?`<button class="btn btn-sm btn-light" onclick="editPerson('${p.id}')">تعديل</button><button class="btn btn-sm ${p.active?'btn-danger':'btn-green'}" onclick="togglePerson('${p.id}',${!p.active})">${p.active?'تعطيل':'تفعيل'}</button>`:''}
+      </div>
+    </div>`).join(''):'<div class="empty">لا توجد أسماء.</div>';
+    $('addPersonBtn').onclick=()=>personForm(null,role)
+  }finally{loading(false)}
+}
+function personForm(person=null,role=state.peopleRole){
+  openModal(person?'تعديل الاسم':'إضافة اسم',`<form id="personForm">
+    <div class="field"><label>الاسم</label><input name="name" required value="${esc(person?.name||'')}"/></div>
+    <div class="field"><label>الحالة</label><select name="active"><option value="true" ${person?.active!==false?'selected':''}>نشط</option><option value="false" ${person?.active===false?'selected':''}>معطل</option></select></div>
+    <button class="btn btn-primary" type="submit">حفظ</button>
+  </form>`,true);
+  $('personForm').onsubmit=async e=>{e.preventDefault();try{loading(true);const {error}=await db.rpc('admin_save_person',{p_id:person?.id||null,p_name:e.currentTarget.elements.name.value.trim(),p_role:role,p_active:e.currentTarget.elements.active.value==='true'});if(error)throw error;closeModal();toast('تم حفظ الاسم');await loadReferences();await loadPeoplePage(role)}catch(x){toast(errMsg(x),'error')}finally{loading(false)}}
+}
+async function editPerson(id){const p=state.people.find(x=>x.id===id);if(p)personForm(p,p.role)}
+async function togglePerson(id,active){const p=state.people.find(x=>x.id===id);if(!p)return;try{loading(true);const {error}=await db.rpc('admin_save_person',{p_id:p.id,p_name:p.name,p_role:p.role,p_active:active});if(error)throw error;toast(active?'تم تفعيل الاسم':'تم تعطيل الاسم');await loadReferences();await loadPeoplePage(p.role)}catch(e){toast(errMsg(e),'error')}finally{loading(false)}}
+async function personDetails(id){
+  const person=state.people.find(x=>x.id===id);const name=person?.name||'الشخص';
+  try{loading(true);const {data,error}=await db.from('v_person_operations').select('*').eq('person_id',id).gte('work_date',state.bounds.cycle_start).lte('work_date',state.bounds.cycle_end).order('work_date',{ascending:false});if(error)throw error;
+    openModal(`تفاصيل ${name}`,`<div class="table-wrap"><table class="data-table"><thead><tr><th>التاريخ</th><th>المشروع</th><th>القطاع</th><th>الأمتار</th><th>النصيب</th><th>الشركاء</th></tr></thead><tbody>${(data||[]).map(x=>`<tr><td>${fmtDate(x.work_date)}</td><td>${esc(x.project)}</td><td>${esc(x.section)}</td><td>${fmt(x.meters)}</td><td>${fmt(x.share_amount)}</td><td>${esc(x.partners||'—')}</td></tr>`).join('')||'<tr><td colspan="6">لا توجد عمليات.</td></tr>'}</tbody></table></div>`)
+  }catch(e){toast(errMsg(e),'error')}finally{loading(false)}
+}
+
+async function loadAttendance(force=false){
+  if(!state.attendanceRows.length||force){loading(true,'جاري تحميل الحضور والغياب...');const {data,error}=await db.rpc('attendance_for_cycle',{p_month_key:state.monthKey});loading(false);if(error)throw error;state.attendanceRows=data||[]}
+  rebuildAttendancePersonFilter();state.attendancePage=1;applyAttendanceFilters()
+}
+function rebuildAttendancePersonFilter(){
+  const role=$('attendanceRole').value,old=$('attendancePerson').value;
+  const rows=state.attendanceRows.filter(x=>!role||x.role===role),names=[...new Map(rows.map(x=>[x.person_id,{id:x.person_id,name:x.person_name}])).values()].sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+  $('attendancePerson').innerHTML='<option value="">كل الأشخاص</option>'+names.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('');if(names.some(x=>x.id===old))$('attendancePerson').value=old
+}
+function applyAttendanceFilters(){
+  const role=$('attendanceRole').value,person=$('attendancePerson').value,status=$('attendanceStatus').value,q=$('attendanceSearch').value.trim().toLowerCase();
+  state.attendanceFiltered=state.attendanceRows.filter(x=>(!role||x.role===role)&&(!person||x.person_id===person)&&(!status||x.status===status)&&(!q||`${x.person_name} ${x.attendance_date}`.toLowerCase().includes(q)));
+  const pages=Math.max(1,Math.ceil(state.attendanceFiltered.length/state.attendancePageSize));if(state.attendancePage>pages)state.attendancePage=pages;renderAttendance()
+}
+function renderAttendance(){
+  const start=(state.attendancePage-1)*state.attendancePageSize,rows=state.attendanceFiltered.slice(start,start+state.attendancePageSize);
+  $('attendanceBody').innerHTML=rows.map(x=>`<tr>
+    <td class="cell-strong">${esc(x.person_name)}</td><td>${ROLE_AR[x.role]}</td><td>${fmtDate(x.attendance_date)}${x.is_friday?' <span class="badge neutral">جمعة</span>':''}</td>
+    <td>${x.status==='present'?'<span class="badge ok">حاضر</span>':x.status==='absent'?'<span class="badge bad">غياب</span>':'<span class="badge neutral">قادم</span>'}</td>
+    <td><select class="input" style="min-width:135px;padding:7px" data-absence-person="${x.person_id}" data-absence-date="${x.attendance_date}" ${!isAdmin()||x.status!=='absent'?'disabled':''}>
+      <option value="" ${!x.absence_type?'selected':''}>غير محدد</option><option value="excused" ${x.absence_type==='excused'?'selected':''}>غياب بإذن</option><option value="unexcused" ${x.absence_type==='unexcused'?'selected':''}>غياب بدون إذن</option>
+    </select></td>
+    <td><input class="input" style="min-width:240px;padding:7px" data-note-person="${x.person_id}" data-note-date="${x.attendance_date}" value="${esc(x.note||'')}" ${!isAdmin()?'disabled':''}/></td>
+    <td>${isAdmin()?`<button class="btn btn-sm btn-primary" onclick="saveAttendanceNote('${x.person_id}','${x.attendance_date}',this)">حفظ</button>`:'—'}</td>
+  </tr>`).join('');
+  $('attendanceEmpty').classList.toggle('hidden',rows.length>0);
+  document.querySelectorAll('[data-absence-person]').forEach(el=>el.onchange=()=>saveAbsence(el.dataset.absencePerson,el.dataset.absenceDate,el.value));
+  const total=state.attendanceFiltered.length,from=total?start+1:0,to=Math.min(start+state.attendancePageSize,total);$('attendancePageInfo').textContent=`عرض ${from} - ${to} من ${total}`;$('attendancePrev').disabled=state.attendancePage<=1;$('attendanceNext').disabled=state.attendancePage>=Math.ceil(total/state.attendancePageSize)
+}
+async function saveAbsence(person,date,type){
+  try{const {error}=await db.rpc('upsert_absence_type',{p_person_id:person,p_date:date,p_type:type||null});if(error)throw error;toast('تم حفظ نوع الغياب');state.attendanceRows=[];await loadAttendance(true)}catch(e){toast(errMsg(e),'error')}
+}
+async function saveAttendanceNote(person,date,btn){
+  const inp=document.querySelector(`[data-note-person="${person}"][data-note-date="${date}"]`);if(!inp)return;
+  try{btn.disabled=true;const {error}=await db.rpc('upsert_attendance_note',{p_person_id:person,p_date:date,p_note:inp.value});if(error)throw error;toast('تم حفظ الملاحظة');state.attendanceRows=[]}catch(e){toast(errMsg(e),'error')}finally{btn.disabled=false}
+}
+$('attendanceRole').onchange=()=>{rebuildAttendancePersonFilter();state.attendancePage=1;applyAttendanceFilters()};$('attendancePerson').onchange=$('attendanceStatus').onchange=()=>{state.attendancePage=1;applyAttendanceFilters()};$('attendanceSearch').oninput=()=>{state.attendancePage=1;applyAttendanceFilters()};$('attendancePrev').onclick=()=>{if(state.attendancePage>1){state.attendancePage--;renderAttendance()}};$('attendanceNext').onclick=()=>{if(state.attendancePage*state.attendancePageSize<state.attendanceFiltered.length){state.attendancePage++;renderAttendance()}};$('refreshAttendanceBtn').onclick=()=>loadAttendance(true);
+
+async function loadProjects(){
+  loading(true,'جاري تحميل المشاريع...');
+  try{
+    const [allR,useR]=await Promise.all([db.from('projects').select('id,name,active').order('name'),db.from('v_project_autocomplete').select('*')]);if(allR.error)throw allR.error;if(useR.error)throw useR.error;
+    const um=new Map((useR.data||[]).map(x=>[x.id,x]));state.projects=(allR.data||[]).map(x=>({...x,use_count:um.get(x.id)?.use_count||0,last_used:um.get(x.id)?.last_used||null}));
+    renderProjects();$('addProjectBtn').onclick=()=>projectForm(null)
+  }finally{loading(false)}
+}
+function renderProjects(){
+  const q=$('projectSearch').value.trim().toLowerCase(),f=$('projectActiveFilter').value;
+  const rows=state.projects.filter(x=>(!q||x.name.toLowerCase().includes(q))&&(!f||(f==='active'?x.active:!x.active)));
+  $('projectsBody').innerHTML=rows.map(x=>`<tr><td class="cell-strong">${esc(x.name)}</td><td><span class="badge ${x.active?'ok':'neutral'}">${x.active?'نشط':'معطل'}</span></td><td>${fmt(x.use_count)}</td><td>${fmtDate(x.last_used)}</td><td>${isAdmin()?`<div class="actions"><button class="btn btn-sm btn-light" onclick="projectFormById('${x.id}')">تعديل</button><button class="btn btn-sm ${x.active?'btn-danger':'btn-green'}" onclick="toggleProject('${x.id}',${!x.active})">${x.active?'تعطيل':'تفعيل'}</button></div>`:'—'}</td></tr>`).join('')
+}
+$('projectSearch').oninput=renderProjects;$('projectActiveFilter').onchange=renderProjects;
+function projectForm(project=null){
+  openModal(project?'تعديل المشروع':'إضافة مشروع',`<form id="projectForm"><div class="field"><label>اسم المشروع</label><input name="name" required value="${esc(project?.name||'')}"/></div><div class="field"><label>الحالة</label><select name="active"><option value="true" ${project?.active!==false?'selected':''}>نشط</option><option value="false" ${project?.active===false?'selected':''}>معطل</option></select></div><button class="btn btn-primary" type="submit">حفظ</button></form>`,true);
+  $('projectForm').onsubmit=async e=>{e.preventDefault();try{loading(true);const {error}=await db.rpc('admin_save_project',{p_id:project?.id||null,p_name:e.currentTarget.elements.name.value.trim(),p_active:e.currentTarget.elements.active.value==='true'});if(error)throw error;closeModal();toast('تم حفظ المشروع');await loadReferences();await loadProjects()}catch(x){toast(errMsg(x),'error')}finally{loading(false)}}
+}
+function projectFormById(id){const p=state.projects.find(x=>x.id===id);if(p)projectForm(p)}
+async function toggleProject(id,active){const p=state.projects.find(x=>x.id===id);if(!p)return;try{loading(true);const {error}=await db.rpc('admin_save_project',{p_id:p.id,p_name:p.name,p_active:active});if(error)throw error;toast(active?'تم تفعيل المشروع':'تم تعطيل المشروع');await loadReferences();await loadProjects()}catch(e){toast(errMsg(e),'error')}finally{loading(false)}}
+
+async function loadSections(){
+  loading(true,'جاري تحميل القطاعات...');
+  try{
+    if(!state.dashboard){const {data,error}=await db.rpc('dashboard_data',{p_month_key:state.monthKey});if(error)throw error;state.dashboard=data}
+    const {data,error}=await db.from('sections').select('id,name,price_per_meter,active').order('name');if(error)throw error;state.sections=data||[];renderSections();$('addSectionBtn').onclick=()=>sectionForm(null)
+  }finally{loading(false)}
+}
+function renderSections(){
+  const q=$('sectionSearch').value.trim().toLowerCase(),f=$('sectionActiveFilter').value,sm=new Map((state.dashboard?.sections||[]).map(x=>[x.name,x]));
+  const rows=state.sections.filter(x=>(!q||x.name.toLowerCase().includes(q))&&(!f||(f==='active'?x.active:!x.active)));
+  $('sectionsBody').innerHTML=rows.map(x=>{const st=sm.get(x.name)||{tasks:0,meters:0,revenue:0};return `<tr><td class="cell-strong">${esc(x.name)}</td><td>${fmt(x.price_per_meter)}</td><td><span class="badge ${x.active?'ok':'neutral'}">${x.active?'نشط':'معطل'}</span></td><td>${fmt(st.tasks)}</td><td>${fmt(st.meters)}</td><td>${fmt(st.revenue)}</td><td>${isAdmin()?`<div class="actions"><button class="btn btn-sm btn-light" onclick="sectionFormById('${x.id}')">تعديل</button><button class="btn btn-sm ${x.active?'btn-danger':'btn-green'}" onclick="toggleSection('${x.id}',${!x.active})">${x.active?'تعطيل':'تفعيل'}</button></div>`:'—'}</td></tr>`}).join('')
+}
+$('sectionSearch').oninput=renderSections;$('sectionActiveFilter').onchange=renderSections;
+function sectionForm(section=null){
+  openModal(section?'تعديل القطاع':'إضافة قطاع',`<form id="sectionForm"><div class="field"><label>اسم القطاع</label><input name="name" required value="${esc(section?.name||'')}"/></div><div class="field"><label>سعر المتر</label><input name="price" type="number" min="0" step="0.01" required value="${section?.price_per_meter??0}"/></div><div class="field"><label>الحالة</label><select name="active"><option value="true" ${section?.active!==false?'selected':''}>نشط</option><option value="false" ${section?.active===false?'selected':''}>معطل</option></select></div><button class="btn btn-primary" type="submit">حفظ</button></form>`,true);
+  $('sectionForm').onsubmit=async e=>{e.preventDefault();try{loading(true);const {error}=await db.rpc('admin_save_section',{p_id:section?.id||null,p_name:e.currentTarget.elements.name.value.trim(),p_price:Number(e.currentTarget.elements.price.value||0),p_active:e.currentTarget.elements.active.value==='true'});if(error)throw error;closeModal();toast('تم حفظ القطاع');await loadReferences();state.dashboard=null;await loadSections()}catch(x){toast(errMsg(x),'error')}finally{loading(false)}}
+}
+function sectionFormById(id){const s=state.sections.find(x=>x.id===id);if(s)sectionForm(s)}
+async function toggleSection(id,active){const s=state.sections.find(x=>x.id===id);if(!s)return;try{loading(true);const {error}=await db.rpc('admin_save_section',{p_id:s.id,p_name:s.name,p_price:Number(s.price_per_meter),p_active:active});if(error)throw error;toast(active?'تم تفعيل القطاع':'تم تعطيل القطاع');await loadReferences();state.dashboard=null;await loadSections()}catch(e){toast(errMsg(e),'error')}finally{loading(false)}}
+
+init();
+</script>
+</body>
+</html>
