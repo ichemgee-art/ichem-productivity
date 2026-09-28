@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - react-rebuild
+      - ui-ux-v2
     paths-ignore:
       - package-lock.json
 
