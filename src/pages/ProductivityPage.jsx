@@ -9,7 +9,7 @@ import EmptyState from '../components/EmptyState'
 import Modal from '../components/Modal'
 import SubmissionForm from '../components/SubmissionForm'
 import ExportButtons from '../components/ExportButtons'
-import { useFeedback } from '../context/FeedbackContext'
+import { useFeedback } from '../context/FeedbackContext'\nimport { smartIncludes } from '../lib/smartSearch'
 
 export default function ProductivityPage() {
   const { selectedCycle, monthKey } = useCycle()
@@ -41,10 +41,7 @@ export default function ProductivityPage() {
     if (project && row.project !== project) return false
     if (section && row.section !== section) return false
     if (review && row.review_status !== review) return false
-    if (queryText.trim()) {
-      const haystack = [row.project, row.section, row.engineers, row.technicians, row.assistants, row.workers, row.work_date].join(' ').toLowerCase()
-      if (!haystack.includes(queryText.trim().toLowerCase())) return false
-    }
+    if (!smartIncludes(queryText, row.project, row.section, row.engineers, row.technicians, row.assistants, row.workers, row.work_date, row.meters, row.price_per_meter, row.total)) return false
     return true
   }), [rows, project, section, review, queryText])
 
