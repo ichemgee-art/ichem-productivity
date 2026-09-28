@@ -10,6 +10,7 @@ import PeoplePage from './pages/PeoplePage'
 import AttendancePage from './pages/AttendancePage'
 import ProjectsPage from './pages/ProjectsPage'
 import SectionsPage from './pages/SectionsPage'
+import ComparisonPage from './pages/ComparisonPage'
 
 function RequireAuth({ children }) {
   const { session, loading } = useAuth()
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="attendance" element={<AttendancePage />} />
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="sections" element={<SectionsPage />} />
+        <Route path="comparison" element={<ComparisonPage />} />
       </Route>
       <Route path="*" element={<Navigate to={session ? '/' : '/login'} replace />} />
     </Routes>
