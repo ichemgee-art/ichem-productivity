@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeftRight, BarChart3, CalendarCheck2, CalendarX2, CircleDollarSign, Ruler, TrendingDown, TrendingUp } from 'lucide-react'
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useCycle } from '../context/CycleContext'
 import { appService } from '../services/appService'
 import { date, money, monthName, number } from '../lib/format'
@@ -150,6 +151,24 @@ export default function ComparisonPage() {
   const assistantRows = useMemo(() => mergeNamed(previous.assistants, current.assistants, 'person_name'), [previous.assistants, current.assistants])
   const workerRows = useMemo(() => mergeNamed(previous.workers, current.workers, 'person_name'), [previous.workers, current.workers])
 
+  const projectChartData = useMemo(() => projectRows
+    .map((row) => ({
+      name: row.name,
+      previous: Number(row.previous?.meters || 0),
+      current: Number(row.current?.meters || 0),
+    }))
+    .sort((a, b) => Math.max(b.previous, b.current) - Math.max(a.previous, a.current))
+    .slice(0, 8), [projectRows])
+
+  const peopleChartData = useMemo(() => [...technicianRows, ...assistantRows, ...workerRows]
+    .map((row) => ({
+      name: row.name,
+      previous: Number(row.previous?.earnings || 0),
+      current: Number(row.current?.earnings || 0),
+    }))
+    .sort((a, b) => Math.max(b.previous, b.current) - Math.max(a.previous, a.current))
+    .slice(0, 10), [technicianRows, assistantRows, workerRows])
+
   const overviewRows = [
     ['إجمالي العمليات', prevSummary.tasks, currSummary.tasks],
     ['إجمالي الأمتار', prevSummary.meters, currSummary.meters],
@@ -221,6 +240,46 @@ export default function ComparisonPage() {
             <CompareStat label="متوسط سعر المتر" previous={prevSummary.avg_price} current={currSummary.avg_price} format={money} icon={TrendingUp} />
             <CompareStat label="أيام الحضور" previous={prevAttendance.present} current={currAttendance.present} icon={CalendarCheck2} />
             <CompareStat label="أيام الغياب" previous={prevAttendance.absent} current={currAttendance.absent} icon={CalendarX2} />
+          </section>
+
+          <section className="comparison-chart-grid">
+            <section className="panel chart-panel comparison-chart-card">
+              <header className="panel-header"><div><h3>المشاريع — مقارنة الأمتار</h3><p>أعلى المشاريع بين الشهرين</p></div><span className="chart-badge">Projects</span></header>
+              <div className="chart-wrap chart-wrap-large">
+                {projectChartData.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={projectChartData} margin={{ top: 16, right: 10, left: 4, bottom: 55 }}>
+                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e8edf4" />
+                      <XAxis dataKey="name" angle={-18} textAnchor="end" height={76} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <Tooltip formatter={(value) => `${number(value)} م`} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontFamily: 'Cairo', fontSize: 12 }} />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <Bar dataKey="previous" name={monthName(previousKey)} fill="var(--navy-800)" radius={[7, 7, 0, 0]} />
+                      <Bar dataKey="current" name={monthName(currentKey)} fill="var(--blue-500)" radius={[7, 7, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : <EmptyState />}
+              </div>
+            </section>
+
+            <section className="panel chart-panel comparison-chart-card">
+              <header className="panel-header"><div><h3>الأفراد — مقارنة المستحقات</h3><p>أعلى المستحقات بين الشهرين</p></div><span className="chart-badge">Team</span></header>
+              <div className="chart-wrap chart-wrap-large">
+                {peopleChartData.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={peopleChartData} layout="vertical" margin={{ top: 12, right: 20, left: 50, bottom: 12 }}>
+                      <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="#e8edf4" />
+                      <XAxis type="number" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <Tooltip formatter={(value) => money(value)} contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontFamily: 'Cairo', fontSize: 12 }} />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <Bar dataKey="previous" name={monthName(previousKey)} fill="var(--navy-800)" radius={[0, 7, 7, 0]} />
+                      <Bar dataKey="current" name={monthName(currentKey)} fill="var(--blue-500)" radius={[0, 7, 7, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : <EmptyState />}
+              </div>
+            </section>
           </section>
 
           <NamedComparisonTable title="مقارنة المشاريع" rows={projectRows} moneyMode />
