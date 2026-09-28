@@ -134,5 +134,5 @@ function PersonForm({ person, saving, onSave }) {
     try { await onSave({ id: person.id || null, name: name.trim(), role: person.role, active }) } catch (err) { setError(err.message || 'تعذر الحفظ') }
   }
 
-  return <form className="modal-form" onSubmit={submit}><label className="field"><span>الاسم</span><input required value={name} onChange={(e) => setName(e.target.value)} /></label><label className="toggle-row"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} /><span>الاسم نشط ويمكن اختياره في العمليات الجديدة</span></label>{error ? <div className="form-error">{error}</div> : null}<button className="btn btn-primary" disabled={saving}>{saving ? 'جاري الحفظ...' : 'حفظ'}</button></form>
+  return <form className="modal-form" onSubmit={submit} noValidate><label className="field"><span>الاسم</span><input required value={name} onChange={(e) => setName(e.target.value)} /></label><label className="toggle-row"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} /><span>الاسم نشط ويمكن اختياره في العمليات الجديدة</span></label>{error ? <div className="form-error">{error}</div> : null}<button className="btn btn-primary" disabled={saving}>{saving ? 'جاري الحفظ...' : 'حفظ'}</button></form>
 }
