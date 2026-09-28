@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Pencil, Search, Trash2, XCircle } from 'lucide-react'
 import { useCycle } from '../context/CycleContext'
@@ -8,6 +8,7 @@ import { date, money, number } from '../lib/format'
 import EmptyState from '../components/EmptyState'
 import Modal from '../components/Modal'
 import SubmissionForm from '../components/SubmissionForm'
+import ExportButtons from '../components/ExportButtons'
 
 export default function ProductivityPage() {
   const { selectedCycle, monthKey } = useCycle()
@@ -20,6 +21,7 @@ export default function ProductivityPage() {
   const [editing, setEditing] = useState(null)
   const [editInitial, setEditInitial] = useState(null)
   const [error, setError] = useState('')
+  const exportRef = useRef(null)
 
   const rowsQuery = useQuery({
     queryKey: ['cycle-data', 'productivity', monthKey],
@@ -48,6 +50,23 @@ export default function ProductivityPage() {
     meters: acc.meters + Number(row.meters || 0),
     total: acc.total + Number(row.total || 0),
   }), { meters: 0, total: 0 }), [filtered])
+
+  const excelSheets = [{
+    name: 'البيانات المحسوبة',
+    rows: filtered.map((row) => ({
+      'التاريخ': date(row.work_date),
+      'المشروع': row.project || '—',
+      'المهندسين': row.engineers || '—',
+      'الفنيين': row.technicians || '—',
+      'المساعدين': row.assistants || '—',
+      'العمال': row.workers || '—',
+      'القطاع': row.section || '—',
+      'الأمتار': Number(row.meters || 0),
+      'سعر المتر': Number(row.price_per_meter || 0),
+      'الإجمالي': Number(row.total || 0),
+      'المراجعة': row.review_status === 'reviewed' ? 'تمت المراجعة' : 'لم تتم',
+    })),
+  }]
 
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: ['cycle-data'] })
@@ -101,12 +120,13 @@ export default function ProductivityPage() {
         <div><span>إجمالي الإنتاجية</span><strong>{money(totals.total)}</strong></div>
       </section>
 
-      <section className="panel">
+      <section className="panel" ref={exportRef}>
         <div className="filters-bar">
           <div className="input-with-icon grow"><Search size={16} /><input value={queryText} onChange={(e) => setQueryText(e.target.value)} placeholder="بحث في المشروع، القطاع، المهندس أو الفريق..." /></div>
           <select value={project} onChange={(e) => setProject(e.target.value)}><option value="">كل المشاريع</option>{projects.map((item) => <option key={item}>{item}</option>)}</select>
           <select value={section} onChange={(e) => setSection(e.target.value)}><option value="">كل القطاعات</option>{sections.map((item) => <option key={item}>{item}</option>)}</select>
           <select value={review} onChange={(e) => setReview(e.target.value)}><option value="">كل حالات المراجعة</option><option value="reviewed">تمت المراجعة</option><option value="not_reviewed">لم تتم المراجعة</option></select>
+          <ExportButtons filename={`productivity-${monthKey}`} excelSheets={excelSheets} pdfTarget={exportRef} compact />
         </div>
         {error ? <div className="inline-error">{error}</div> : null}
         <div className="data-table-wrap">
