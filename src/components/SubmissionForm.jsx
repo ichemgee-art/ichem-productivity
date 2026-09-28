@@ -1,10 +1,15 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import { Check, LoaderCircle } from 'lucide-react'
 import PeoplePicker from './PeoplePicker'
 import { number, today } from '../lib/format'
+import { useFeedback } from '../context/FeedbackContext'
 
 const emptyTeam = { engineer: [], technician: [], assistant: [], worker: [] }
 
 export default function SubmissionForm({ references, initial, onSubmit, submitting, mode = 'create' }) {
+  const feedback = useFeedback()
+  const successTimer = useRef(null)
+  const [saveVisual, setSaveVisual] = useState('idle')
   const [form, setForm] = useState({
     work_date: initial?.work_date || today(),
     project: initial?.project || '',
@@ -52,25 +57,42 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
   const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }))
   const setRole = (role, value) => setTeam((current) => ({ ...current, [role]: value }))
 
+  const fail = (message) => {
+    setFormError(message)
+    feedback.error('راجع بيانات العملية', message)
+  }
+
   const submit = async (event) => {
     event.preventDefault()
     setFormError('')
+
+    if (!form.work_date) return fail('اختار تاريخ العملية')
+    if (!form.project.trim()) return fail('اسم المشروع مطلوب')
+    if (!form.section) return fail('اختار القطاع')
+    if (form.meters === '' || Number(form.meters) < 0) return fail('اكتب عدد الأمتار بشكل صحيح')
+    if (!team.engineer.length) return fail('اختار مهندس واحد على الأقل')
+
     try {
-      if (!team.engineer.length) throw new Error('اختار مهندس واحد على الأقل')
-      if (!form.project.trim()) throw new Error('اسم المشروع مطلوب')
-      if (!form.section) throw new Error('اختار القطاع')
+      setSaveVisual('saving')
       await onSubmit({ form, team, submitMode })
+      setSaveVisual('success')
+      if (successTimer.current) window.clearTimeout(successTimer.current)
+      successTimer.current = window.setTimeout(() => setSaveVisual('idle'), 1500)
+
       if (mode === 'create' && submitMode === 'saveAnother') {
         setForm((current) => ({ ...current, meters: '' }))
         setTeam(emptyTeam)
       }
     } catch (error) {
-      setFormError(error.message || 'تعذر حفظ العملية')
+      setSaveVisual('idle')
+      const message = error.message || 'تعذر حفظ العملية'
+      setFormError(message)
+      feedback.error('تعذر حفظ العملية', message)
     }
   }
 
   return (
-    <form className="submission-form" onSubmit={submit}>
+    <form className="submission-form" onSubmit={submit} noValidate>
       <div className="entry-flow" aria-label="ترتيب إدخال الإنتاجية">
         <span><b>1</b> التاريخ</span>
         <span><b>2</b> المشروع</span>
@@ -156,8 +178,8 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
 
       {formError ? <div className="form-error">{formError}</div> : null}
       <footer className="form-actions">
-        <button className="btn btn-primary" disabled={submitting} type="submit" onClick={() => setSubmitMode('save')}>
-          {submitting ? 'جاري الحفظ...' : mode === 'edit' ? 'حفظ التعديلات' : 'حفظ العملية'}
+        <button className={`btn save-operation-btn ${saveVisual === 'success' ? 'is-success' : 'btn-primary'}`} disabled={submitting || saveVisual === 'saving'} type="submit" onClick={() => setSubmitMode('save')}>
+          {saveVisual === 'saving' || submitting ? <><LoaderCircle className="spin-icon" size={18} /> جاري الحفظ...</> : saveVisual === 'success' ? <><Check size={18} /> تم الحفظ</> : mode === 'edit' ? 'حفظ التعديلات' : 'حفظ العملية'}
         </button>
         {mode === 'create' ? (
           <button className="btn btn-secondary" disabled={submitting} type="submit" onClick={() => setSubmitMode('saveAnother')}>
