@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   BarChart3, ClipboardPlus, Database, FolderKanban, Gauge, LogOut, Menu,
-  Settings2, ShieldCheck, UserRoundCog, Users, X, CalendarDays, Wrench,
+  Settings2, ShieldCheck, UserRoundCog, Users, X, CalendarDays, Wrench, ArrowLeftRight,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useCycle } from '../context/CycleContext'
@@ -17,6 +17,7 @@ const pageTitles = {
   '/attendance': ['الحضور والغياب', 'متابعة الحضور والغياب والملاحظات داخل الدورة.'],
   '/projects': ['المشاريع', 'قائمة المشاريع واستخدامها داخل التشغيل.'],
   '/sections': ['القطاعات والأسعار', 'القطاعات وأسعار المتر الحالية والتاريخ التشغيلي.'],
+  '/comparison': ['مقارنة الشهور', 'مقارنة شاملة بين دورتين من حيث التشغيل والحضور والأداء.'],
 }
 
 const peopleLabels = { engineer: 'المهندسين', technician: 'الفنيين', assistant: 'المساعدين', worker: 'العمال' }
@@ -58,6 +59,7 @@ export default function AppLayout() {
     { to: '/people/assistant', label: 'المساعدين', icon: Users },
     { to: '/people/worker', label: 'العمال', icon: Users },
     { to: '/attendance', label: 'الحضور والغياب', icon: CalendarDays },
+    { to: '/comparison', label: 'مقارنة الشهور', icon: ArrowLeftRight },
     { to: '/projects', label: 'المشاريع', icon: FolderKanban },
     { to: '/sections', label: 'القطاعات والأسعار', icon: Settings2 },
   ]
@@ -92,6 +94,7 @@ export default function AppLayout() {
           <button className="menu-btn icon-btn" onClick={() => setMobileOpen(true)}><Menu size={20} /></button>
           <div className="topbar-title"><h1>{meta[0]}</h1><p>{meta[1]}</p></div>
           <div className="topbar-actions">
+            <Link className="btn btn-ghost top-compare-btn" to="/comparison"><ArrowLeftRight size={16} /> مقارنة الشهور</Link>
             {permissions.canCreateSubmission ? <Link className="btn btn-primary top-entry-btn" to="/productivity/new"><ClipboardPlus size={16} /> إدخال إنتاجية</Link> : null}
             <div className="cycle-control">
               <BarChart3 size={17} />
