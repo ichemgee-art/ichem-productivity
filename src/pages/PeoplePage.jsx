@@ -5,9 +5,10 @@ import { Activity, CalendarCheck2, CalendarX2, CircleDollarSign, Pencil, Plus, R
 import { appService } from '../services/appService'
 import { useCycle } from '../context/CycleContext'
 import { useAuth } from '../context/AuthContext'
-import { date, money, number, roleLabels, rolePlural } from '../lib/format'
+import { money, number, roleLabels, rolePlural } from '../lib/format'
 import Modal from '../components/Modal'
 import EmptyState from '../components/EmptyState'
+import PersonDetailsModal from '../components/PersonDetailsModal'
 
 export default function PeoplePage() {
   const { role = 'engineer' } = useParams()
@@ -16,8 +17,6 @@ export default function PeoplePage() {
   const queryClient = useQueryClient()
   const [editing, setEditing] = useState(null)
   const [details, setDetails] = useState(null)
-  const [detailsRows, setDetailsRows] = useState([])
-  const [error, setError] = useState('')
 
   const statsQuery = useQuery({ queryKey: ['cycle-data', 'people-stats', monthKey, role], queryFn: () => appService.personStats(monthKey, role), enabled: Boolean(monthKey) })
   const peopleQuery = useQuery({ queryKey: ['people', role], queryFn: () => appService.people(role) })
@@ -40,16 +39,7 @@ export default function PeoplePage() {
     },
   })
 
-  const showDetails = async (person) => {
-    if (!selectedCycle) return
-    setError('')
-    setDetails(person)
-    try {
-      setDetailsRows(await appService.personOperations(person.id, selectedCycle.cycle_start, selectedCycle.cycle_end))
-    } catch (err) {
-      setError(err.message || 'تعذر تحميل التفاصيل')
-    }
-  }
+  const showDetails = (person) => setDetails(person)
 
   const loading = statsQuery.isLoading || peopleQuery.isLoading
   if (loading) return <div className="page-loader">جاري تحميل بيانات {rolePlural[role] || 'الأفراد'}...</div>
@@ -60,7 +50,6 @@ export default function PeoplePage() {
         <div><span className="eyebrow">TEAM PERFORMANCE</span><h2>{rolePlural[role]}</h2><p>أداء كل شخص في الدورة المعروضة مع الحضور والغياب والمستحقات.</p></div>
         {permissions.canManagePeople ? <button className="btn btn-primary" onClick={() => setEditing({ id: null, name: '', role, active: true })}><Plus size={17} /> إضافة اسم</button> : null}
       </section>
-      {error ? <div className="inline-error">{error}</div> : null}
       <section className="people-grid">
         {rows.map((person) => (
           <article className={`person-card-v2 ${!person.active ? 'inactive' : ''}`} key={person.id}>
@@ -72,7 +61,7 @@ export default function PeoplePage() {
               <div><CalendarCheck2 size={15} /><span>حضور</span><strong>{number(person.present_days)}</strong></div>
               <div><CalendarX2 size={15} /><span>غياب</span><strong>{number(person.absent_days)}</strong></div>
             </div>
-            <div className="person-footer"><span>نسبة من Pool الدور: <b>{number(person.pool_percent)}%</b></span><button className="btn btn-ghost btn-sm" onClick={() => showDetails(person)}>تفاصيل العمليات</button></div>
+            <div className="person-footer"><span>نسبة من Pool الدور: <b>{number(person.pool_percent)}%</b></span><button className="btn btn-ghost btn-sm" onClick={() => showDetails(person)}>تفاصيل العمليات والحضور</button></div>
           </article>
         ))}
         {!rows.length ? <EmptyState /> : null}
@@ -82,9 +71,7 @@ export default function PeoplePage() {
         {editing ? <PersonForm person={editing} saving={saveMutation.isPending} onSave={(payload) => saveMutation.mutateAsync(payload)} /> : null}
       </Modal>
 
-      <Modal open={Boolean(details)} title={`تفاصيل ${details?.name || ''}`} onClose={() => { setDetails(null); setDetailsRows([]) }} width="xl">
-        <div className="data-table-wrap compact-table"><table className="data-table"><thead><tr><th>التاريخ</th><th>المشروع</th><th>القطاع</th><th>الأمتار</th><th>النصيب</th><th>الشركاء</th></tr></thead><tbody>{detailsRows.map((row, index) => <tr key={`${row.work_date}-${index}`}><td>{date(row.work_date)}</td><td className="strong-cell">{row.project}</td><td>{row.section}</td><td>{number(row.meters)}</td><td>{money(row.share_amount)}</td><td>{row.partners || '—'}</td></tr>)}</tbody></table>{!detailsRows.length ? <EmptyState /> : null}</div>
-      </Modal>
+      <PersonDetailsModal person={details} selectedCycle={selectedCycle} monthKey={monthKey} onClose={() => setDetails(null)} />
     </div>
   )
 }
