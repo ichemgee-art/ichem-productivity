@@ -39,6 +39,16 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
     }
   }, [form.meters, section?.price_per_meter, team])
 
+  const personName = (id) => references.people.find((person) => person.id === id)?.name || '—'
+  const teamNames = useMemo(() => ({
+    engineer: team.engineer.map(personName),
+    technician: team.technician.map(personName),
+    assistant: team.assistant.map(personName),
+    worker: team.worker.map(personName),
+  }), [team, references.people])
+
+  const ready = Boolean(form.work_date && form.project.trim() && form.section && form.meters !== '' && Number(form.meters) >= 0 && team.engineer.length)
+
   const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }))
   const setRole = (role, value) => setTeam((current) => ({ ...current, [role]: value }))
 
@@ -121,6 +131,27 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
         <div><span>نصيب كل فني</span><strong>{number(preview.tech)}</strong></div>
         <div><span>نصيب كل مساعد</span><strong>{number(preview.assistant)}</strong></div>
         <div><span>نصيب كل عامل</span><strong>{number(preview.worker)}</strong></div>
+      </section>
+
+      <section className={`submission-review-card ${ready ? 'is-ready' : ''}`}>
+        <div className="review-card-head">
+          <div><span className="section-kicker">03</span><div><h3>راجع العملية قبل الحفظ</h3><p>{ready ? 'البيانات الأساسية مكتملة — راجع الأسماء والأرقام ثم احفظ.' : 'أكمل البيانات المطلوبة ليصبح الملخص جاهزًا للحفظ.'}</p></div></div>
+          <span className={`status-pill ${ready ? 'success' : 'warning'}`}>{ready ? 'جاهزة للحفظ' : 'غير مكتملة'}</span>
+        </div>
+        <div className="review-grid">
+          <div><span>التاريخ</span><strong>{form.work_date || '—'}</strong></div>
+          <div><span>المشروع</span><strong>{form.project.trim() || '—'}</strong></div>
+          <div><span>القطاع</span><strong>{form.section || '—'}</strong></div>
+          <div><span>الأمتار</span><strong>{form.meters === '' ? '—' : number(form.meters)}</strong></div>
+          <div><span>سعر المتر</span><strong>{number(preview.price)} ج.م</strong></div>
+          <div className="highlight"><span>إجمالي العملية</span><strong>{number(preview.total)} ج.م</strong></div>
+        </div>
+        <div className="review-team-grid">
+          <div><span>المهندسين · {team.engineer.length}</span><p>{teamNames.engineer.join('، ') || 'لم يتم الاختيار'}</p></div>
+          <div><span>الفنيين · {team.technician.length}</span><p>{teamNames.technician.join('، ') || 'لا يوجد'}</p></div>
+          <div><span>المساعدين · {team.assistant.length}</span><p>{teamNames.assistant.join('، ') || 'لا يوجد'}</p></div>
+          <div><span>العمال · {team.worker.length}</span><p>{teamNames.worker.join('، ') || 'لا يوجد'}</p></div>
+        </div>
       </section>
 
       {formError ? <div className="form-error">{formError}</div> : null}
