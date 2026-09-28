@@ -9,7 +9,8 @@ import EmptyState from '../components/EmptyState'
 import Modal from '../components/Modal'
 import SubmissionForm from '../components/SubmissionForm'
 import ExportButtons from '../components/ExportButtons'
-import { useFeedback } from '../context/FeedbackContext'\nimport { smartIncludes } from '../lib/smartSearch'
+import { useFeedback } from '../context/FeedbackContext'
+import { smartIncludes } from '../lib/smartSearch'
 
 export default function ProductivityPage() {
   const { selectedCycle, monthKey } = useCycle()
