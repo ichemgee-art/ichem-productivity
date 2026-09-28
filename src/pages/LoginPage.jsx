@@ -40,7 +40,7 @@ export default function LoginPage() {
       </section>
 
       <section className="login-form-side">
-        <form className="login-card" onSubmit={submit}>
+        <form className="login-card" onSubmit={submit} noValidate>
           <div className="mobile-brand"><span className="brand-tile">iC</span><strong>iChem Productivity</strong></div>
           <span className="login-overline">SECURE ACCESS</span>
           <h2>تسجيل الدخول</h2>
