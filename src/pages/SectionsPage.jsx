@@ -9,6 +9,7 @@ import Modal from '../components/Modal'
 import EmptyState from '../components/EmptyState'
 import ExportButtons from '../components/ExportButtons'
 import { useFeedback } from '../context/FeedbackContext'
+import { smartIncludes } from '../lib/smartSearch'
 
 export default function SectionsPage() {
   const { permissions } = useAuth()
@@ -79,7 +80,7 @@ export default function SectionsPage() {
   const rows = useMemo(() => (sectionsQuery.data || []).filter((item) => {
     if (activeFilter === 'active' && !item.active) return false
     if (activeFilter === 'inactive' && item.active) return false
-    if (queryText.trim() && !item.name.toLowerCase().includes(queryText.trim().toLowerCase())) return false
+    if (!smartIncludes(queryText, item.name, item.price_per_meter)) return false
     return true
   }), [sectionsQuery.data, activeFilter, queryText])
 
