@@ -67,3 +67,118 @@ body{font-size:14px}.topbar-title h1{font-size:21px}.topbar-title p{font-size:11
 .confirm-actions{display:flex;justify-content:flex-start;gap:8px;margin-top:18px}.btn-danger-solid{background:linear-gradient(135deg,#c63d3d,#a92929);color:#fff;box-shadow:0 8px 18px rgba(198,61,61,.18)}
 
 @media(max-width:1180px){.review-grid{grid-template-columns:repeat(3,1fr)}.review-team-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:760px){.review-card-head{align-items:flex-start;flex-direction:column}.review-grid{grid-template-columns:repeat(2,1fr)}.review-team-grid{grid-template-columns:1fr}.app-toast{top:72px;left:14px}.confirm-dialog{padding:18px}.confirm-actions{flex-direction:column}.confirm-actions .btn{width:100%}}
+
+
+/* 2026-09-28 usability pass: larger text, spacious cards, full-detail modal */
+body{font-size:16px;line-height:1.65}
+.page-content{padding:20px}
+.topbar{min-height:78px}
+.topbar-title h1{font-size:24px}
+.topbar-title p{font-size:13px}
+.sidebar{width:auto}
+.nav-link{font-size:14px;min-height:46px}
+.btn{font-size:13px;min-height:40px;padding:9px 14px}
+.btn-sm{font-size:12px;min-height:36px}
+.field>span{font-size:14px;font-weight:700}
+.field input,.field select,.field textarea,.filters-bar input,.filters-bar select,.table-input,.data-table select{font-size:14px;min-height:44px}
+.status-pill{font-size:11px;padding:6px 9px}
+.data-table{font-size:13px}
+.data-table th{font-size:12px}
+.data-table th,.data-table td{padding:13px 14px}
+.panel-header h3,.section-heading h3{font-size:17px}
+.panel-header p,.section-heading p{font-size:12px}
+.form-hint,.hint{font-size:11px}
+.people-grid{grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+.person-card-v2{padding:18px;border-radius:17px;min-height:235px}
+.person-card-head{gap:12px}
+.person-avatar{width:48px;height:48px;border-radius:14px;font-size:18px}
+.person-identity strong{font-size:15px;line-height:1.5}
+.person-identity span{font-size:11px}
+.card-head-actions .icon-btn{width:38px;height:38px}
+.person-metrics{grid-template-columns:repeat(5,minmax(72px,1fr));gap:8px;margin-top:16px}
+.person-metrics>div{min-height:82px;padding:10px 7px;border-radius:12px}
+.person-metrics svg{width:18px;height:18px}
+.person-metrics span{font-size:10px;line-height:1.35}
+.person-metrics strong{font-size:13px;line-height:1.45}
+.person-footer{font-size:11px;margin-top:14px;padding-top:12px}
+.person-details-btn{font-size:12px!important;min-height:38px!important;padding:8px 12px!important;font-weight:800}
+.people-headline{padding:22px 24px}
+.people-headline h2{font-size:24px}
+.people-headline p{font-size:13px}
+.modal-card.modal-xl{width:min(1320px,98vw);max-height:94vh}
+.modal-header{padding:16px 20px}
+.modal-header h3{font-size:17px}
+.modal-body{padding:20px}
+.person-details-report{gap:18px}
+.details-summary-grid{gap:10px}
+.details-summary-grid>div{padding:16px 12px}
+.details-summary-grid svg{width:22px;height:22px}
+.details-summary-grid span{font-size:11px}
+.details-summary-grid strong{font-size:18px}
+.details-toolbar{gap:10px;padding:14px}
+.details-toolbar .input-with-icon{min-height:46px}
+.details-toolbar input,.details-toolbar select{font-size:13px!important;min-height:44px}
+.details-toolbar select{min-width:160px}
+.details-date-filter{display:flex;align-items:center;gap:6px;padding:0 9px;border:1px solid #dce4ef;border-radius:10px;background:#fff;min-height:44px}
+.details-date-filter span{font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap}
+.details-date-filter input{border:0;background:transparent;min-height:40px;font-size:12px}
+.clear-filters-btn{white-space:nowrap}
+.subsection-title{padding:15px 17px}
+.subsection-title h4{font-size:16px}
+.subsection-title span{font-size:11px}
+.project-chip-list{gap:9px;padding:15px}
+.project-chip{font-size:12px;padding:10px 12px}
+.project-chip b{font-size:10px}
+.readable-table{font-size:13px}
+.readable-table th{font-size:12px}
+.readable-table th,.readable-table td{padding:13px 14px}
+.note-cell{min-width:240px}
+.management-hero{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 24px;background:#fff;border:1px solid var(--border);border-radius:17px}
+.management-hero h2{margin:5px 0 4px;font-size:23px;color:var(--navy-900)}
+.management-hero p{margin:0;font-size:12px;color:var(--muted)}
+.management-add-btn{min-height:44px;white-space:nowrap}
+.section-actions{min-width:170px;justify-content:center}
+.btn-danger-soft{background:#fff2f2;border:1px solid #f0cdcd;color:#b63535}
+.btn-danger-soft:hover{background:#ffe9e9}
+.save-operation-btn{min-width:150px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .22s ease,color .22s ease,transform .18s ease,box-shadow .22s ease}
+.save-operation-btn.is-success{background:#16845b;color:#fff;border-color:#16845b;box-shadow:0 9px 22px rgba(22,132,91,.22);transform:translateY(-1px)}
+.save-operation-btn.is-success svg{animation:saveCheck .28s ease-out}
+@keyframes saveCheck{0%{transform:scale(.55);opacity:.2}75%{transform:scale(1.18);opacity:1}100%{transform:scale(1)}}
+.app-toast__copy strong{font-size:14px}
+.app-toast__copy p{font-size:12px}
+.confirm-copy h3{font-size:19px}
+.confirm-copy>p,.confirm-details{font-size:13px}
+.review-card-head h3{font-size:17px}
+.review-card-head p{font-size:12px}
+.review-grid span,.review-team-grid span{font-size:11px}
+.review-grid strong{font-size:14px}
+.review-team-grid p{font-size:12px}
+.entry-flow span{font-size:12px}
+.people-picker__head strong{font-size:14px}
+.people-picker__head span{font-size:11px}
+.pick-person{font-size:13px;min-height:42px}
+.calc-preview span{font-size:11px}
+.calc-preview strong{font-size:18px}
+.export-label{font-size:11px}
+
+@media(max-width:1200px){
+  .people-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .person-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .details-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  body{font-size:15px}
+  .page-content{padding:12px}
+  .people-grid{grid-template-columns:1fr}
+  .person-card-v2{min-height:0}
+  .person-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .person-footer{align-items:stretch;flex-direction:column}
+  .person-details-btn{width:100%}
+  .management-hero{align-items:stretch;flex-direction:column;padding:18px}
+  .management-add-btn{width:100%}
+  .modal-card.modal-xl{width:99vw;max-height:96vh;border-radius:12px}
+  .modal-body{padding:12px}
+  .details-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .details-date-filter{width:100%}
+  .details-date-filter input{width:100%}
+}
