@@ -121,7 +121,7 @@ export default function PersonDetailsModal({ person, selectedCycle, monthKey, on
             <label className="details-date-filter"><span>من</span><input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} /></label>
             <label className="details-date-filter"><span>إلى</span><input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} /></label>
             <button className="btn btn-ghost btn-sm clear-filters-btn" type="button" onClick={() => { setSearch(''); setProject(''); setSection(''); setAttendanceStatus(''); setFromDate(''); setToDate('') }}><RotateCcw size={15} /> مسح الفلاتر</button>
-            <ExportButtons filename={`${person.name}-${monthKey}-details`} excelSheets={excelSheets} pdfTarget={printRef} compact />
+            <ExportButtons filename={`${person?.name || 'person'}-${monthKey}-details`} excelSheets={excelSheets} pdfTarget={printRef} compact />
           </section>
 
           <section className="visited-projects no-pdf-break">
