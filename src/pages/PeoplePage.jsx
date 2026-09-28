@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useParams } from 'react-router-dom'
 import { Activity, CalendarCheck2, CalendarX2, CircleDollarSign, Pencil, Plus, Ruler, Trash2 } from 'lucide-react'
 import { appService } from '../services/appService'
 import { useCycle } from '../context/CycleContext'
@@ -11,8 +10,7 @@ import EmptyState from '../components/EmptyState'
 import PersonDetailsModal from '../components/PersonDetailsModal'
 import { useFeedback } from '../context/FeedbackContext'
 
-export default function PeoplePage() {
-  const { role = 'engineer' } = useParams()
+export default function PeoplePage({ role = 'engineer' }) {
   const { monthKey, selectedCycle } = useCycle()
   const { permissions } = useAuth()
   const queryClient = useQueryClient()
@@ -20,10 +18,6 @@ export default function PeoplePage() {
   const [editing, setEditing] = useState(null)
   const [details, setDetails] = useState(null)
 
-  useEffect(() => {
-    setEditing(null)
-    setDetails(null)
-  }, [role, monthKey])
 
   const statsQuery = useQuery({ queryKey: ['cycle-data', 'people-stats', monthKey, role], queryFn: () => appService.personStats(monthKey, role), enabled: Boolean(monthKey) })
   const peopleQuery = useQuery({ queryKey: ['people', role], queryFn: () => appService.people(role) })
