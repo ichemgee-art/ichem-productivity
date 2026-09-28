@@ -114,7 +114,7 @@ export default function AppLayout() {
             <button className="icon-btn" onClick={signOut} title="تسجيل الخروج"><LogOut size={18} /></button>
           </div>
         </header>
-        <main className="page-content"><Outlet /></main>
+        <main className="page-content"><div key={`${location.pathname}:${monthKey || 'no-cycle'}`} className="route-view"><Outlet /></div></main>
       </div>
     </div>
   )
