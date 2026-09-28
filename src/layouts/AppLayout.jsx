@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   BarChart3, ClipboardPlus, Database, FolderKanban, Gauge, LogOut, Menu,
   Settings2, ShieldCheck, UserRoundCog, Users, X, CalendarDays, Wrench,
@@ -92,6 +92,7 @@ export default function AppLayout() {
           <button className="menu-btn icon-btn" onClick={() => setMobileOpen(true)}><Menu size={20} /></button>
           <div className="topbar-title"><h1>{meta[0]}</h1><p>{meta[1]}</p></div>
           <div className="topbar-actions">
+            {permissions.canCreateSubmission ? <Link className="btn btn-primary top-entry-btn" to="/productivity/new"><ClipboardPlus size={16} /> إدخال إنتاجية</Link> : null}
             <div className="cycle-control">
               <BarChart3 size={17} />
               <div className="cycle-select-wrap">
