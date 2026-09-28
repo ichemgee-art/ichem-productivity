@@ -25,7 +25,7 @@ export default function ExportButtons({ filename, excelSheets, pdfTarget, compac
   }
 
   return (
-    <div className={`export-actions ${compact ? 'compact' : ''}`}>
+    <div className={`export-actions ${compact ? 'compact' : ''}`} data-html2canvas-ignore="true">
       <span className="export-label"><Download size={14} /> تصدير النتائج</span>
       <button className="btn btn-export excel" type="button" onClick={excel} disabled={Boolean(busy)}><FileSpreadsheet size={15} />{busy === 'excel' ? '...' : 'Excel'}</button>
       <button className="btn btn-export pdf" type="button" onClick={pdf} disabled={Boolean(busy)}><FileText size={15} />{busy === 'pdf' ? '...' : 'PDF'}</button>
