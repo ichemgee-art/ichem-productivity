@@ -35,7 +35,10 @@ export default function App() {
         <Route index element={<DashboardPage />} />
         <Route path="productivity" element={<ProductivityPage />} />
         <Route path="productivity/new" element={<RequireCreate><NewSubmissionPage /></RequireCreate>} />
-        <Route path="people/:role" element={<PeoplePage />} />
+        <Route path="people/engineer" element={<PeoplePage key="engineer" role="engineer" />} />
+        <Route path="people/technician" element={<PeoplePage key="technician" role="technician" />} />
+        <Route path="people/assistant" element={<PeoplePage key="assistant" role="assistant" />} />
+        <Route path="people/worker" element={<PeoplePage key="worker" role="worker" />} />
         <Route path="attendance" element={<AttendancePage />} />
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="sections" element={<SectionsPage />} />
