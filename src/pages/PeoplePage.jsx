@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Activity, CalendarCheck2, CalendarX2, CircleDollarSign, Pencil, Plus, Ruler, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { appService } from '../services/appService'
 import { useCycle } from '../context/CycleContext'
 import { useAuth } from '../context/AuthContext'
@@ -96,18 +96,41 @@ export default function PeoplePage({ role = 'engineer' }) {
         <div><span className="eyebrow">TEAM PERFORMANCE</span><h2>{rolePlural[role]}</h2><p>أداء كل شخص في الدورة المعروضة مع الحضور والغياب والمستحقات.</p></div>
         {permissions.canManagePeople ? <button className="btn btn-primary" onClick={() => setEditing({ id: null, name: '', role, active: true })}><Plus size={17} /> إضافة اسم</button> : null}
       </section>
-      <section className="people-grid">
+      <section className="people-grid people-grid-pro">
         {rows.map((person) => (
-          <article className={`person-card-v2 ${!person.active ? 'inactive' : ''}`} key={person.id}>
-            <div className="person-card-head"><div className="person-avatar">{person.name.slice(0, 1)}</div><div className="person-identity"><strong>{person.name}</strong><span>{roleLabels[role]} · {person.active ? 'نشط' : 'معطل'}</span></div>{permissions.canManagePeople ? <div className="card-head-actions"><button className="icon-btn small" title="تعديل" onClick={() => setEditing(person)}><Pencil size={15} /></button><button className="icon-btn small danger" title="حذف" onClick={() => removePerson(person)}><Trash2 size={15} /></button></div> : null}</div>
-            <div className="person-metrics">
-              <div><Activity size={15} /><span>المهام</span><strong>{number(person.tasks)}</strong></div>
-              <div><Ruler size={15} /><span>الأمتار</span><strong>{number(person.meters)}</strong></div>
-              <div><CircleDollarSign size={15} /><span>المستحق</span><strong>{money(person.earnings)}</strong></div>
-              <div><CalendarCheck2 size={15} /><span>حضور</span><strong>{number(person.present_days)}</strong></div>
-              <div><CalendarX2 size={15} /><span>غياب</span><strong>{number(person.absent_days)}</strong></div>
+          <article className={`person-profile-card ${!person.active ? 'inactive' : ''}`} key={person.id}>
+            <div className="person-profile-top">
+              <div className="person-profile-main">
+                <div className="person-avatar-pro">{person.name.slice(0, 1)}</div>
+                <div className="person-profile-copy">
+                  <strong>{person.name}</strong>
+                  <div><span className="role-badge">{roleLabels[role]}</span><span className={`availability-dot ${person.active ? 'active' : ''}`}>{person.active ? 'نشط' : 'معطل'}</span></div>
+                </div>
+              </div>
+              {permissions.canManagePeople ? (
+                <div className="card-head-actions">
+                  <button className="icon-btn small" title="تعديل" onClick={() => setEditing(person)}><Pencil size={16} /></button>
+                  <button className="icon-btn small danger" title="حذف" onClick={() => removePerson(person)}><Trash2 size={16} /></button>
+                </div>
+              ) : null}
             </div>
-            <div className="person-footer"><span>نسبة من Pool الدور: <b>{number(person.pool_percent)}%</b></span><button className="btn btn-ghost person-details-btn" onClick={() => showDetails(person)}>تفاصيل العمليات والحضور</button></div>
+
+            <div className="person-kpi-primary">
+              <div><span>عدد العمليات</span><strong>{number(person.tasks)}</strong></div>
+              <div><span>إجمالي الأمتار</span><strong>{number(person.meters)} <small>م</small></strong></div>
+              <div className="earnings-kpi"><span>المستحق</span><strong>{money(person.earnings)}</strong></div>
+            </div>
+
+            <div className="person-attendance-row">
+              <div className="attendance-stat present"><span>أيام الحضور</span><strong>{number(person.present_days)}</strong></div>
+              <div className="attendance-stat absent"><span>أيام الغياب</span><strong>{number(person.absent_days)}</strong></div>
+              <div className="pool-stat"><span>نسبة Pool</span><strong>{number(person.pool_percent)}%</strong></div>
+            </div>
+
+            <button className="person-details-cta" type="button" onClick={() => showDetails(person)}>
+              <span>عرض الملف التشغيلي الكامل</span>
+              <small>العمليات · المشاريع · الحضور · الغياب · الفلاتر</small>
+            </button>
           </article>
         ))}
         {!rows.length ? <EmptyState /> : null}
