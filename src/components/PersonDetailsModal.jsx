@@ -5,7 +5,7 @@ import { appService } from '../services/appService'
 import { date, money, number } from '../lib/format'
 import Modal from './Modal'
 import EmptyState from './EmptyState'
-import ExportButtons from './ExportButtons'
+import ExportButtons from './ExportButtons'\nimport { smartIncludes } from '../lib/smartSearch'
 
 const statusLabel = (row) => row.status === 'present' ? 'حاضر' : row.status === 'absent' ? 'غياب' : 'قادم'
 const absenceLabel = (type) => type === 'excused' ? 'غياب بإذن' : type === 'unexcused' ? 'غياب بدون إذن' : '—'
@@ -43,10 +43,7 @@ export default function PersonDetailsModal({ person, selectedCycle, monthKey, on
     if (section && row.section !== section) return false
     if (fromDate && row.work_date < fromDate) return false
     if (toDate && row.work_date > toDate) return false
-    if (search.trim()) {
-      const haystack = [row.work_date, row.project, row.section, row.partners, row.meters, row.share_amount].join(' ').toLowerCase()
-      if (!haystack.includes(search.trim().toLowerCase())) return false
-    }
+    if (!smartIncludes(search, row.work_date, row.project, row.section, row.partners, row.meters, row.share_amount)) return false
     return true
   }), [data.operations, project, section, search, fromDate, toDate])
 
@@ -54,10 +51,7 @@ export default function PersonDetailsModal({ person, selectedCycle, monthKey, on
     if (attendanceStatus && row.status !== attendanceStatus) return false
     if (fromDate && row.attendance_date < fromDate) return false
     if (toDate && row.attendance_date > toDate) return false
-    if (search.trim()) {
-      const haystack = [row.attendance_date, statusLabel(row), absenceLabel(row.absence_type), row.note].join(' ').toLowerCase()
-      if (!haystack.includes(search.trim().toLowerCase())) return false
-    }
+    if (!smartIncludes(search, row.attendance_date, statusLabel(row), absenceLabel(row.absence_type), row.note)) return false
     return true
   }), [data.attendance, attendanceStatus, search, fromDate, toDate])
 
