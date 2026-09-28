@@ -6,7 +6,8 @@ import { useAuth } from '../context/AuthContext'
 import { appService } from '../services/appService'
 import { date, roleLabels } from '../lib/format'
 import EmptyState from '../components/EmptyState'
-import ExportButtons from '../components/ExportButtons'\nimport { smartIncludes } from '../lib/smartSearch'
+import ExportButtons from '../components/ExportButtons'
+import { smartIncludes } from '../lib/smartSearch'
 
 export default function AttendancePage() {
   const { monthKey } = useCycle()
