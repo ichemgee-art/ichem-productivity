@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { appService } from '../services/appService'
 import { date, roleLabels } from '../lib/format'
 import EmptyState from '../components/EmptyState'
-import ExportButtons from '../components/ExportButtons'
+import ExportButtons from '../components/ExportButtons'\nimport { smartIncludes } from '../lib/smartSearch'
 
 export default function AttendancePage() {
   const { monthKey } = useCycle()
@@ -28,7 +28,7 @@ export default function AttendancePage() {
     if (role && row.role !== role) return false
     if (person && row.person_id !== person) return false
     if (status && row.status !== status) return false
-    if (queryText.trim() && !`${row.person_name} ${row.attendance_date}`.toLowerCase().includes(queryText.trim().toLowerCase())) return false
+    if (!smartIncludes(queryText, row.person_name, row.attendance_date, row.status, row.absence_type, row.note)) return false
     return true
   }), [rows, role, person, status, queryText])
 
