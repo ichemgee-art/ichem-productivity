@@ -6,7 +6,8 @@ import { appService } from '../services/appService'
 import { date, number } from '../lib/format'
 import Modal from '../components/Modal'
 import EmptyState from '../components/EmptyState'
-import ExportButtons from '../components/ExportButtons'\nimport { smartIncludes } from '../lib/smartSearch'
+import ExportButtons from '../components/ExportButtons'
+import { smartIncludes } from '../lib/smartSearch'
 
 export default function ProjectsPage() {
   const { permissions } = useAuth()
