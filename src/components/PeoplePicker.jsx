@@ -15,7 +15,7 @@ export default function PeoplePicker({ title, role, people, selected, onChange }
       <div className="people-picker__head">
         <div>
           <strong>{title}</strong>
-          <span>{selected.length} مختار</span>
+          <span>{selected.length ? `${selected.length} مختار` : 'بدون'}</span>
         </div>
         <div className="input-with-icon compact">
           <Search size={15} />
@@ -23,6 +23,15 @@ export default function PeoplePicker({ title, role, people, selected, onChange }
         </div>
       </div>
       <div className="people-picker__list">
+        <label className={`pick-person pick-none ${selected.length === 0 ? 'is-selected' : ''}`}>
+          <input
+            type="checkbox"
+            checked={selected.length === 0}
+            onChange={() => onChange([])}
+          />
+          <span>بدون</span>
+          <small>لا يوجد</small>
+        </label>
         {filtered.map((person) => (
           <label className={`pick-person ${!person.active ? 'is-inactive' : ''}`} key={person.id}>
             <input
