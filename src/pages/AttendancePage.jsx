@@ -58,6 +58,7 @@ export default function AttendancePage() {
   }]
 
   if (query.isLoading) return <div className="page-loader">جاري تحميل الحضور والغياب...</div>
+  if (query.isError) return <div className="page-error">{query.error?.message || 'تعذر تحميل الحضور والغياب'}</div>
 
   return (
     <div className="page-stack">
