@@ -151,7 +151,8 @@ export default function ProductivityPage() {
     try { await deleteMutation.mutateAsync(row.id) } catch (err) { setError(err.message) }
   }
 
-  if (!selectedCycle || rowsQuery.isLoading) return <div className="page-loader">جاري تحميل البيانات المحسوبة...</div>
+  if (!selectedCycle || rowsQuery.isLoading || refsQuery.isLoading) return <div className="page-loader">جاري تحميل البيانات المحسوبة...</div>
+  if (rowsQuery.isError || refsQuery.isError) return <div className="page-error">{rowsQuery.error?.message || refsQuery.error?.message || 'تعذر تحميل البيانات المحسوبة'}</div>
 
   return (
     <div className="page-stack">
