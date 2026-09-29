@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - react-rebuild
-      - audit-dashboard-admin
     paths-ignore:
       - package-lock.json
 
