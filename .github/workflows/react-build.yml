@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - react-rebuild
+      - productivity-horizontal-scroll
     paths-ignore:
       - package-lock.json
 
