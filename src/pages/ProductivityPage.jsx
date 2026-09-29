@@ -170,7 +170,7 @@ export default function ProductivityPage() {
           <ExportButtons filename={`productivity-${monthKey}`} excelSheets={excelSheets} pdfTarget={exportRef} compact />
         </div>
         {error ? <div className="inline-error">{error}</div> : null}
-        <div className="data-table-wrap">
+        <div className="data-table-wrap productivity-scroll">
           <table className="data-table">
             <thead><tr><th>التاريخ</th><th>المشروع</th><th>المهندسين</th><th>الفنيين</th><th>المساعدين</th><th>العمال</th><th>القطاع</th><th>الأمتار</th><th>سعر المتر</th><th>الإجمالي</th><th>المراجعة</th>{permissions.isAdmin ? <th>إدارة</th> : null}<th>ملاحظات</th></tr></thead>
             <tbody>
