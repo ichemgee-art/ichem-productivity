@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - react-rebuild
+      - submission-notes-cards
     paths-ignore:
       - package-lock.json
 
