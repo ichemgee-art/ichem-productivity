@@ -44,7 +44,7 @@ export default function PersonDetailsModal({ person, selectedCycle, monthKey, on
     if (section && row.section !== section) return false
     if (fromDate && row.work_date < fromDate) return false
     if (toDate && row.work_date > toDate) return false
-    if (!smartIncludes(search, row.work_date, row.project, row.section, row.partners, row.meters, row.share_amount)) return false
+    if (!smartIncludes(search, row.work_date, row.project, row.section, row.partners, row.meters, row.share_amount, row.note)) return false
     return true
   }), [data.operations, project, section, search, fromDate, toDate])
 
@@ -81,6 +81,7 @@ export default function PersonDetailsModal({ person, selectedCycle, monthKey, on
         'الأمتار': Number(row.meters || 0),
         'النصيب': Number(row.share_amount || 0),
         'الشركاء': row.partners || '—',
+        'ملاحظة العملية': row.note || '',
       })),
     },
     {
@@ -127,7 +128,7 @@ export default function PersonDetailsModal({ person, selectedCycle, monthKey, on
           <section className="details-section">
             <div className="subsection-title"><h4>تفاصيل العمليات</h4><span>{filteredOperations.length} نتيجة</span></div>
             <div className="data-table-wrap compact-table">
-              <table className="data-table readable-table"><thead><tr><th>التاريخ</th><th>المشروع</th><th>القطاع</th><th>الأمتار</th><th>النصيب</th><th>الشركاء</th></tr></thead><tbody>{filteredOperations.map((row, index) => <tr key={`${row.work_date}-${row.project}-${index}`}><td>{date(row.work_date)}</td><td className="strong-cell">{row.project}</td><td>{row.section}</td><td>{number(row.meters)}</td><td>{money(row.share_amount)}</td><td>{row.partners || '—'}</td></tr>)}</tbody></table>
+              <table className="data-table readable-table"><thead><tr><th>التاريخ</th><th>المشروع</th><th>القطاع</th><th>الأمتار</th><th>النصيب</th><th>الشركاء</th><th>ملاحظة العملية</th></tr></thead><tbody>{filteredOperations.map((row, index) => <tr key={`${row.work_date}-${row.project}-${index}`}><td>{date(row.work_date)}</td><td className="strong-cell">{row.project}</td><td>{row.section}</td><td>{number(row.meters)}</td><td>{money(row.share_amount)}</td><td>{row.partners || '—'}</td><td className="note-cell operation-note-cell">{row.note || '—'}</td></tr>)}</tbody></table>
               {!filteredOperations.length ? <EmptyState title="لا توجد عمليات مطابقة للفلتر" /> : null}
             </div>
           </section>
