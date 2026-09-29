@@ -52,13 +52,13 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
     worker: team.worker.map(personName),
   }), [team, references.people])
 
-  const ready = Boolean(form.work_date && form.project.trim() && form.section && form.meters !== '' && Number(form.meters) >= 0 && team.engineer.length)
+  const ready = Boolean(form.work_date && form.project.trim() && form.section && form.meters !== '' && Number(form.meters) >= 0)
   const steps = {
     date: Boolean(form.work_date),
     project: Boolean(form.project.trim()),
     section: Boolean(form.section),
     meters: form.meters !== '' && Number(form.meters) >= 0,
-    team: team.engineer.length > 0,
+    team: true,
     review: ready,
   }
 
@@ -78,7 +78,6 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
     if (!form.project.trim()) return fail('اسم المشروع مطلوب')
     if (!form.section) return fail('اختار القطاع')
     if (form.meters === '' || Number(form.meters) < 0) return fail('اكتب عدد الأمتار بشكل صحيح')
-    if (!team.engineer.length) return fail('اختار مهندس واحد على الأقل')
 
     try {
       setSaveVisual('saving')
@@ -145,7 +144,7 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
       <section className="form-section">
         <div className="section-heading">
           <div><span className="section-kicker">02</span><h3>فريق التنفيذ — بالترتيب: مهندسين، فنيين، مساعدين، عمال</h3></div>
-          <p>مسموح باختيار أكثر من مهندس وأكثر من فرد في كل دور.</p>
+          <p>مسموح باختيار أكثر من فرد، أو اختيار "بدون" لأي دور غير موجود في العملية.</p>
         </div>
         <div className="picker-grid">
           <PeoplePicker title="المهندسين" role="engineer" people={references.people} selected={team.engineer} onChange={(v) => setRole('engineer', v)} />
@@ -177,10 +176,10 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
           <div className="highlight"><span>إجمالي العملية</span><strong>{number(preview.total)} ج.م</strong></div>
         </div>
         <div className="review-team-grid">
-          <div><span>المهندسين · {team.engineer.length}</span><p>{teamNames.engineer.join('، ') || 'لم يتم الاختيار'}</p></div>
-          <div><span>الفنيين · {team.technician.length}</span><p>{teamNames.technician.join('، ') || 'لا يوجد'}</p></div>
-          <div><span>المساعدين · {team.assistant.length}</span><p>{teamNames.assistant.join('، ') || 'لا يوجد'}</p></div>
-          <div><span>العمال · {team.worker.length}</span><p>{teamNames.worker.join('، ') || 'لا يوجد'}</p></div>
+          <div><span>المهندسين · {team.engineer.length}</span><p>{teamNames.engineer.join('، ') || 'بدون'}</p></div>
+          <div><span>الفنيين · {team.technician.length}</span><p>{teamNames.technician.join('، ') || 'بدون'}</p></div>
+          <div><span>المساعدين · {team.assistant.length}</span><p>{teamNames.assistant.join('، ') || 'بدون'}</p></div>
+          <div><span>العمال · {team.worker.length}</span><p>{teamNames.worker.join('، ') || 'بدون'}</p></div>
         </div>
       </section>
 
