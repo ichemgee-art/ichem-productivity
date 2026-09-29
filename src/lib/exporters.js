@@ -24,6 +24,16 @@ export async function exportElementPdf(element, filename) {
     backgroundColor: '#ffffff',
     windowWidth: Math.max(element.scrollWidth, element.clientWidth),
     windowHeight: Math.max(element.scrollHeight, element.clientHeight),
+    onclone: (clonedDocument) => {
+      clonedDocument.querySelectorAll('.data-table-wrap, .compact-table, .productivity-scroll, .person-operation-notes__list').forEach((node) => {
+        node.style.maxHeight = 'none'
+        node.style.height = 'auto'
+        node.style.overflow = 'visible'
+      })
+      clonedDocument.querySelectorAll('.data-table th').forEach((node) => {
+        node.style.position = 'static'
+      })
+    },
   })
 
   const pdf = new jsPDF({
