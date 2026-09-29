@@ -99,7 +99,8 @@ export default function SectionsPage() {
     }),
   }]
 
-  if (sectionsQuery.isLoading) return <div className="page-loader">جاري تحميل القطاعات...</div>
+  if (sectionsQuery.isLoading || dashboardQuery.isLoading) return <div className="page-loader">جاري تحميل القطاعات...</div>
+  if (sectionsQuery.isError || dashboardQuery.isError) return <div className="page-error">{sectionsQuery.error?.message || dashboardQuery.error?.message || 'تعذر تحميل بيانات القطاعات'}</div>
 
   return (
     <div className="page-stack">
@@ -127,6 +128,15 @@ function SectionForm({ section, saving, onSave }) {
   const [price, setPrice] = useState(section.price_per_meter ?? 0)
   const [active, setActive] = useState(section.active !== false)
   const [error, setError] = useState('')
-  const submit = async (event) => { event.preventDefault(); setError(''); try { await onSave({ id: section.id || null, name: name.trim(), price: Number(price || 0), active }) } catch (err) { setError(err.message || 'تعذر الحفظ') } }
+  const submit = async (event) => {
+    event.preventDefault()
+    setError('')
+    const cleanName = name.trim()
+    const numericPrice = Number(price)
+    if (!cleanName) return setError('اسم القطاع مطلوب')
+    if (cleanName.length > 120) return setError('اسم القطاع طويل جدًا')
+    if (String(price).trim() === '' || !Number.isFinite(numericPrice) || numericPrice < 0) return setError('اكتب سعر المتر بشكل صحيح')
+    try { await onSave({ id: section.id || null, name: cleanName, price: numericPrice, active }) } catch (err) { setError(err.message || 'تعذر الحفظ') }
+  }
   return <form className="modal-form" onSubmit={submit} noValidate><label className="field"><span>اسم القطاع</span><input required value={name} onChange={(e) => setName(e.target.value)} /></label><label className="field"><span>سعر المتر</span><input type="number" min="0" step="0.01" required value={price} onChange={(e) => setPrice(e.target.value)} /></label><label className="toggle-row"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} /><span>القطاع نشط</span></label><div className="form-hint">تغيير السعر يؤثر على العمليات الجديدة فقط؛ السجلات القديمة تحتفظ بسعرها التاريخي.</div>{error ? <div className="form-error">{error}</div> : null}<button className="btn btn-primary" disabled={saving}>{saving ? 'جاري الحفظ...' : 'حفظ'}</button></form>
 }
