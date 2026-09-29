@@ -38,6 +38,7 @@ export default function ProjectsPage() {
   }]
 
   if (query.isLoading) return <div className="page-loader">جاري تحميل المشاريع...</div>
+  if (query.isError) return <div className="page-error">{query.error?.message || 'تعذر تحميل المشاريع'}</div>
 
   return (
     <div className="page-stack">
