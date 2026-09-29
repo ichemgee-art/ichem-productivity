@@ -481,6 +481,14 @@ body{font-size:16px;line-height:1.65}
   color:#47658c;
   font-size:9px;
 }
+.person-operation-notes__list{
+  display:grid;
+  gap:6px;
+  max-height:138px;
+  overflow:auto;
+  padding-inline-end:2px;
+  scrollbar-width:thin;
+}
 .person-operation-note{
   min-width:0;
   padding:8px 9px;
