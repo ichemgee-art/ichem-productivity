@@ -35,7 +35,6 @@ const addDays = (iso, n) => {
 }
 const daysBetween = (start, end) => Math.max(0, Math.floor((parseDay(end) - parseDay(start)) / 86400000) + 1)
 const minIso = (...values) => values.filter(Boolean).sort()[0]
-const maxIso = (...values) => values.filter(Boolean).sort().at(-1)
 
 function summarizeRows(rows) {
   const tasks = rows.length
@@ -135,13 +134,14 @@ export default function DashboardPage() {
       const previousKey = currentDashboard.previous_month_key
       const previousBounds = await appService.cycleBounds(previousKey)
 
-      const [currentRows, previousRows, currentAttendance, previousAttendance, currentOps, previousOps] = await Promise.all([
+      const [currentRows, previousRows, currentAttendance, previousAttendance, currentOps, previousOps, businessToday] = await Promise.all([
         appService.productivityRows(selectedCycle.cycle_start, selectedCycle.cycle_end),
         appService.productivityRows(previousBounds.cycle_start, previousBounds.cycle_end),
         appService.attendance(monthKey),
         appService.attendance(previousKey),
         appService.cyclePersonOperations(selectedCycle.cycle_start, selectedCycle.cycle_end),
         appService.cyclePersonOperations(previousBounds.cycle_start, previousBounds.cycle_end),
+        appService.businessToday(),
       ])
 
       return {
@@ -154,6 +154,7 @@ export default function DashboardPage() {
         previousAttendance,
         currentOps,
         previousOps,
+        businessToday,
       }
     },
   })
@@ -163,10 +164,10 @@ export default function DashboardPage() {
     const {
       currentDashboard, previousKey, previousBounds,
       currentRows, previousRows, currentAttendance, previousAttendance,
-      currentOps, previousOps,
+      currentOps, previousOps, businessToday,
     } = query.data
 
-    const today = isoDay(new Date())
+    const today = businessToday
     const currentStart = selectedCycle.cycle_start
     const currentEnd = selectedCycle.cycle_end
     const currentCutoff = today < currentStart ? currentStart : minIso(today, currentEnd) || currentEnd
