@@ -127,7 +127,10 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
       setSaveVisual('saving')
       if (mode === 'create' && !requestIdRef.current) {
         requestIdRef.current = globalThis.crypto?.randomUUID?.()
-          || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+          || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+            const value = Math.floor(Math.random() * 16)
+            return (char === 'x' ? value : (value & 0x3) | 0x8).toString(16)
+          })
       }
       await onSubmit({
         form: { ...form, meters: preview.meters },
