@@ -14,9 +14,21 @@ import ComparisonPage from './pages/ComparisonPage'
 import AuditPage from './pages/AuditPage'
 
 function RequireAuth({ children }) {
-  const { session, loading } = useAuth()
+  const { session, profile, loading, error, signOut } = useAuth()
   if (loading) return <LoadingScreen />
   if (!session) return <Navigate to="/login" replace />
+  if (error && !profile) {
+    return (
+      <div className="auth-fatal-screen">
+        <div className="route-error-card">
+          <h3>تعذر تحميل صلاحيات الحساب</h3>
+          <p>{error}</p>
+          <button className="btn btn-primary" type="button" onClick={() => window.location.reload()}>إعادة المحاولة</button>
+          <button className="btn btn-ghost" type="button" onClick={signOut}>تسجيل الخروج</button>
+        </div>
+      </div>
+    )
+  }
   return children
 }
 
