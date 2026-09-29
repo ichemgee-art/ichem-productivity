@@ -146,11 +146,15 @@ export default function PeoplePage({ role = 'engineer' }) {
                   <span><MessageSquareText size={15} /> ملاحظات العمليات</span>
                   <b>{person.operation_notes.length}</b>
                 </div>
-                <div className="person-operation-note">
-                  <p>{person.operation_notes[0].note}</p>
-                  <small>{person.operation_notes[0].project || 'بدون مشروع'} · {date(person.operation_notes[0].work_date)}</small>
+                <div className="person-operation-notes__list">
+                  {person.operation_notes.map((note) => (
+                    <div className="person-operation-note" key={note.submission_id}>
+                      <p>{note.note}</p>
+                      <small>{note.project || 'بدون مشروع'} · {date(note.work_date)}</small>
+                    </div>
+                  ))}
                 </div>
-                {person.operation_notes.length > 1 ? <span className="person-operation-notes__more">+ {person.operation_notes.length - 1} ملاحظة أخرى في التفاصيل</span> : null}
+                {person.operation_notes.length > 2 ? <span className="person-operation-notes__more">مرّر داخل الملاحظات لعرض الكل</span> : null}
               </div>
             ) : null}
 
