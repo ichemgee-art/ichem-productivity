@@ -31,6 +31,36 @@ export const appService = {
     return unwrap(await supabase.rpc('dashboard_data', { p_month_key: monthKey }))
   },
 
+  async auditEntries(limit = 500) {
+    const [logsResult, profilesResult] = await Promise.all([
+      supabase.from('audit_log').select('*').order('occurred_at', { ascending: false }).limit(limit),
+      supabase.from('profiles').select('user_id,display_name,app_role'),
+    ])
+    const logs = unwrap(logsResult) || []
+    const profiles = unwrap(profilesResult) || []
+    const profileMap = new Map(profiles.map((row) => [row.user_id, row]))
+    return logs.map((row) => ({
+      ...row,
+      actor_name: profileMap.get(row.user_id)?.display_name || 'System',
+      actor_role: profileMap.get(row.user_id)?.app_role || null,
+    }))
+  },
+
+  async restoreAuditEvent(id) {
+    return unwrap(await supabase.rpc('admin_restore_audit_event', { p_audit_id: Number(id) }))
+  },
+
+  async cyclePersonOperations(start, end) {
+    return unwrap(
+      await supabase
+        .from('v_person_operations')
+        .select('person_id,person_name,role,submission_id,work_date,project,meters,share_amount')
+        .gte('work_date', start)
+        .lte('work_date', end)
+        .order('work_date', { ascending: true }),
+    ) || []
+  },
+
   async references() {
     const [people, sections, projects] = await Promise.all([
       supabase.from('people').select('id,name,role,active').order('role').order('name'),
