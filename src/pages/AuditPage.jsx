@@ -15,6 +15,9 @@ const actionLabels = {
   update_note: 'تعديل ملاحظة',
   update_notes: 'تعديل ملاحظة قديم',
   restore: 'استرجاع',
+  absence_type: 'تغيير الغياب',
+  attendance_note: 'ملاحظة حضور',
+  set_active_cycle: 'تغيير الدورة الحالية',
 }
 
 const entityLabels = {
@@ -22,6 +25,8 @@ const entityLabels = {
   person: 'شخص',
   project: 'مشروع',
   section: 'قطاع',
+  attendance: 'حضور وغياب',
+  system_state: 'إعدادات النظام',
 }
 
 const fieldDefs = [
@@ -78,6 +83,19 @@ function changeRows(row) {
     return [{ label: 'الملاحظة', before: details.before || '—', after: details.after || '—' }]
   }
 
+  if (row.action === 'absence_type' && 'before' in details && 'after' in details) {
+    const label = (value) => value === 'excused' ? 'غياب بإذن' : value === 'unexcused' ? 'غياب بدون إذن' : 'غير محدد'
+    return [{ label: 'نوع الغياب', before: label(details.before), after: label(details.after) }]
+  }
+
+  if (row.action === 'attendance_note' && 'before' in details && 'after' in details) {
+    return [{ label: 'ملاحظة الحضور', before: details.before || '—', after: details.after || '—' }]
+  }
+
+  if (row.action === 'set_active_cycle' && 'before' in details && 'after' in details) {
+    return [{ label: 'الدورة الحالية', before: details.before || '—', after: details.after || '—' }]
+  }
+
   const before = details.before || null
   const after = details.after_full || details.after || null
   if (!before || !after || typeof before !== 'object' || typeof after !== 'object') return []
@@ -111,6 +129,8 @@ function eventSummary(row) {
   if (row.entity_type === 'person') return source?.name || 'تعديل شخص'
   if (row.entity_type === 'project') return source?.name || 'تعديل مشروع'
   if (row.entity_type === 'section') return source?.name || 'تعديل قطاع'
+  if (row.entity_type === 'attendance') return `${d.person_name || 'حضور وغياب'}${d.date ? ` · ${date(d.date)}` : ''}`
+  if (row.entity_type === 'system_state') return 'إعدادات الدورة الحالية'
   return row.entity_id || '—'
 }
 
@@ -154,7 +174,7 @@ export default function AuditPage() {
 
   const query = useQuery({
     queryKey: ['audit-log'],
-    queryFn: () => appService.auditEntries(500),
+    queryFn: () => appService.auditEntries(),
   })
 
   const restoreMutation = useMutation({
