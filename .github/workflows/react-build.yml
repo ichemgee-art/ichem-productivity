@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - react-rebuild
-      - allow-none-team
     paths-ignore:
       - package-lock.json
 
