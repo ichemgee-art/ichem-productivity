@@ -10,6 +10,7 @@ const round2 = (value) => Math.round((Number(value || 0) + Number.EPSILON) * 100
 export default function SubmissionForm({ references, initial, onSubmit, submitting, mode = 'create' }) {
   const feedback = useFeedback()
   const successTimer = useRef(null)
+  const requestIdRef = useRef(null)
   const [saveVisual, setSaveVisual] = useState('idle')
   const [form, setForm] = useState({
     work_date: initial?.work_date || references.businessToday || '',
@@ -94,8 +95,17 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
     review: ready,
   }
 
-  const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }))
-  const setRole = (role, value) => setTeam((current) => ({ ...current, [role]: value }))
+  const resetPendingRequest = () => {
+    if (mode === 'create') requestIdRef.current = null
+  }
+  const setField = (key, value) => {
+    resetPendingRequest()
+    setForm((current) => ({ ...current, [key]: value }))
+  }
+  const setRole = (role, value) => {
+    resetPendingRequest()
+    setTeam((current) => ({ ...current, [role]: value }))
+  }
 
   const fail = (message) => {
     setFormError(message)
@@ -115,7 +125,17 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
 
     try {
       setSaveVisual('saving')
-      await onSubmit({ form: { ...form, meters: preview.meters }, team, submitMode })
+      if (mode === 'create' && !requestIdRef.current) {
+        requestIdRef.current = globalThis.crypto?.randomUUID?.()
+          || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+      }
+      await onSubmit({
+        form: { ...form, meters: preview.meters },
+        team,
+        submitMode,
+        clientRequestId: mode === 'create' ? requestIdRef.current : null,
+      })
+      requestIdRef.current = null
       setSaveVisual('success')
       if (successTimer.current) window.clearTimeout(successTimer.current)
       successTimer.current = window.setTimeout(() => setSaveVisual('idle'), 1500)
