@@ -1,10 +1,11 @@
 import { Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { smartIncludes } from '../lib/smartSearch'
 
 export default function PeoplePicker({ title, role, people, selected, onChange }) {
   const [query, setQuery] = useState('')
   const rows = useMemo(() => people.filter((person) => person.role === role), [people, role])
-  const filtered = rows.filter((person) => person.name.toLowerCase().includes(query.trim().toLowerCase()))
+  const filtered = rows.filter((person) => smartIncludes(query, person.name))
 
   const toggle = (id) => {
     onChange(selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id])
