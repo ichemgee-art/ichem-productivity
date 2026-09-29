@@ -10,7 +10,6 @@ const round2 = (value) => Math.round((Number(value || 0) + Number.EPSILON) * 100
 export default function SubmissionForm({ references, initial, onSubmit, submitting, mode = 'create' }) {
   const feedback = useFeedback()
   const successTimer = useRef(null)
-  const requestIdRef = useRef(null)
   const [saveVisual, setSaveVisual] = useState('idle')
   const [form, setForm] = useState({
     work_date: initial?.work_date || references.businessToday || '',
@@ -26,7 +25,12 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
     if (successTimer.current) window.clearTimeout(successTimer.current)
   }, [])
 
-  const section = references.sections.find((item) => item.name === form.section)
+  const matchedSection = references.sections.find((item) => item.name === form.section)
+  const section = matchedSection || (
+    mode === 'edit' && initial?.section === form.section
+      ? { id: 'historical-section', name: form.section, price_per_meter: initial?.price_per_meter ?? 0, active: false, historical: true }
+      : undefined
+  )
   const rules = references.rules || {}
   const techShare = Number(rules.tech_share ?? 0.7)
   const assistantShare = Number(rules.assistant_share ?? 0.3)
@@ -66,10 +70,19 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
     }
   }, [metersValid, metersNumber, section?.price_per_meter, team, techShare, workerRate])
 
-  const sectionOptions = useMemo(
-    () => references.sections.filter((item) => item.active || (mode === 'edit' && item.name === form.section)),
-    [references.sections, mode, form.section],
-  )
+  const sectionOptions = useMemo(() => {
+    const options = references.sections.filter((item) => item.active || (mode === 'edit' && item.name === form.section))
+    if (mode === 'edit' && form.section && !options.some((item) => item.name === form.section)) {
+      options.push({
+        id: 'historical-section',
+        name: form.section,
+        price_per_meter: initial?.price_per_meter ?? 0,
+        active: false,
+        historical: true,
+      })
+    }
+    return options
+  }, [references.sections, mode, form.section, initial?.price_per_meter])
   const projectOptions = useMemo(
     () => references.projects.filter((item) => item.active || (mode === 'edit' && item.name === form.project)),
     [references.projects, mode, form.project],
@@ -95,17 +108,8 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
     review: ready,
   }
 
-  const resetPendingRequest = () => {
-    if (mode === 'create') requestIdRef.current = null
-  }
-  const setField = (key, value) => {
-    resetPendingRequest()
-    setForm((current) => ({ ...current, [key]: value }))
-  }
-  const setRole = (role, value) => {
-    resetPendingRequest()
-    setTeam((current) => ({ ...current, [role]: value }))
-  }
+  const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }))
+  const setRole = (role, value) => setTeam((current) => ({ ...current, [role]: value }))
 
   const fail = (message) => {
     setFormError(message)
@@ -125,20 +129,11 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
 
     try {
       setSaveVisual('saving')
-      if (mode === 'create' && !requestIdRef.current) {
-        requestIdRef.current = globalThis.crypto?.randomUUID?.()
-          || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
-            const value = Math.floor(Math.random() * 16)
-            return (char === 'x' ? value : (value & 0x3) | 0x8).toString(16)
-          })
-      }
       await onSubmit({
         form: { ...form, meters: preview.meters },
         team,
         submitMode,
-        clientRequestId: mode === 'create' ? requestIdRef.current : null,
       })
-      requestIdRef.current = null
       setSaveVisual('success')
       if (successTimer.current) window.clearTimeout(successTimer.current)
       successTimer.current = window.setTimeout(() => setSaveVisual('idle'), 1500)
@@ -188,7 +183,9 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
             <select required value={form.section} onChange={(e) => setField('section', e.target.value)}>
               <option value="">اختار القطاع</option>
               {sectionOptions.map((item) => (
-                <option key={item.id} value={item.name}>{item.name} — {number(item.price_per_meter)} ج.م/م{!item.active ? ' · معطل تاريخيًا' : ''}</option>
+                <option key={item.id} value={item.name}>
+                  {item.name} — {number(item.price_per_meter)} ج.م/م{item.historical ? ' · محفوظ تاريخيًا' : !item.active ? ' · معطل تاريخيًا' : ''}
+                </option>
               ))}
             </select>
           </label>
