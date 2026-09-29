@@ -1,14 +1,18 @@
 import { useState } from 'react'
 import { Download, FileSpreadsheet, FileText } from 'lucide-react'
 import { exportElementPdf, exportExcel } from '../lib/exporters'
+import { useFeedback } from '../context/FeedbackContext'
 
 export default function ExportButtons({ filename, excelSheets, pdfTarget, compact = false }) {
   const [busy, setBusy] = useState('')
+  const feedback = useFeedback()
 
-  const excel = () => {
+  const excel = async () => {
     setBusy('excel')
     try {
-      exportExcel({ filename, sheets: excelSheets })
+      await exportExcel({ filename, sheets: excelSheets })
+    } catch (error) {
+      feedback.error('تعذر تصدير Excel', error.message || 'حدث خطأ أثناء إنشاء الملف')
     } finally {
       setBusy('')
     }
@@ -19,6 +23,8 @@ export default function ExportButtons({ filename, excelSheets, pdfTarget, compac
     try {
       const element = typeof pdfTarget === 'function' ? pdfTarget() : pdfTarget?.current || pdfTarget
       await exportElementPdf(element, filename)
+    } catch (error) {
+      feedback.error('تعذر تصدير PDF', error.message || 'حدث خطأ أثناء إنشاء الملف')
     } finally {
       setBusy('')
     }

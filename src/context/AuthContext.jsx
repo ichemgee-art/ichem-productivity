@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { appService } from '../services/appService'
 import { permissionsFor } from '../lib/permissions'
+import { queryClient } from '../lib/queryClient'
 
 const AuthContext = createContext(null)
 
@@ -10,12 +11,19 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const activeUserId = useRef(null)
 
   useEffect(() => {
     let mounted = true
 
     const hydrate = async (nextSession) => {
       if (!mounted) return
+      const nextUserId = nextSession?.user?.id || null
+      if (activeUserId.current !== nextUserId) {
+        queryClient.clear()
+        activeUserId.current = nextUserId
+        setProfile(null)
+      }
       setSession(nextSession)
       setError('')
       if (!nextSession) {
@@ -57,7 +65,13 @@ export function AuthProvider({ children }) {
     return data
   }
 
-  const signOut = () => supabase.auth.signOut()
+  const signOut = async () => {
+    queryClient.clear()
+    setProfile(null)
+    setSession(null)
+    activeUserId.current = null
+    return supabase.auth.signOut()
+  }
   const permissions = useMemo(() => permissionsFor(profile?.app_role), [profile?.app_role])
 
   const value = useMemo(() => ({

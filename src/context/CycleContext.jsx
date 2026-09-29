@@ -17,8 +17,14 @@ export function CycleProvider({ children }) {
   })
 
   useEffect(() => {
+    if (!session) setMonthKey(null)
+  }, [session])
+
+  useEffect(() => {
     const cycles = cyclesQuery.data || []
-    if (!cycles.length || monthKey) return
+    if (!cycles.length) return
+    const stillExists = monthKey && cycles.some((cycle) => cycle.month_key === monthKey)
+    if (stillExists) return
     const active = cycles.find((cycle) => cycle.is_active) || cycles[0]
     setMonthKey(active.month_key)
   }, [cyclesQuery.data, monthKey])

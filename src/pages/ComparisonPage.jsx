@@ -12,12 +12,13 @@ const pct = (current, previous) => {
   const a = Number(current || 0)
   const b = Number(previous || 0)
   if (!b && !a) return 0
-  if (!b) return 100
+  if (!b) return null
   return ((a - b) / Math.abs(b)) * 100
 }
 
 const deltaLabel = (current, previous) => {
   const value = pct(current, previous)
+  if (value == null) return 'جديد'
   const sign = value > 0 ? '+' : ''
   return `${sign}${number(value)}%`
 }
@@ -51,7 +52,7 @@ const peopleTotals = (data) => {
 
 function CompareStat({ label, current, previous, format = number, icon: Icon }) {
   const change = pct(current, previous)
-  const up = change >= 0
+  const up = change == null || change >= 0
   return (
     <article className="compare-stat">
       <div className="compare-stat__head"><span>{Icon ? <Icon size={17} /> : null}{label}</span><span className={`compare-delta ${up ? 'up' : 'down'}`}>{up ? <TrendingUp size={14} /> : <TrendingDown size={14} />}{deltaLabel(current, previous)}</span></div>
@@ -89,13 +90,14 @@ function NamedComparisonTable({ title, rows, moneyMode = false, peopleMode = fal
               const prevValue = peopleMode ? Number(prev.earnings || 0) : Number(prev.meters || 0)
               const currValue = peopleMode ? Number(curr.earnings || 0) : Number(curr.meters || 0)
               const change = pct(currValue, prevValue)
+              const up = change == null || change >= 0
               return (
                 <tr key={row.name}>
                   <td className="strong-cell">{row.name}</td>
                   <td>{number(prev.tasks)}</td><td>{number(curr.tasks)}</td><td>{number(Number(curr.tasks || 0) - Number(prev.tasks || 0))}</td>
                   <td>{peopleMode ? money(prevValue) : `${number(prevValue)} م`}</td>
                   <td>{peopleMode ? money(currValue) : `${number(currValue)} م`}</td>
-                  <td><span className={`compare-delta ${change >= 0 ? 'up' : 'down'}`}>{deltaLabel(currValue, prevValue)}</span></td>
+                  <td><span className={`compare-delta ${up ? 'up' : 'down'}`}>{deltaLabel(currValue, prevValue)}</span></td>
                   {peopleMode ? <><td>{number(prev.present_days)}</td><td>{number(curr.present_days)}</td><td>{number(prev.absent_days)}</td><td>{number(curr.absent_days)}</td></> : null}
                   {moneyMode ? <><td>{money(prev.revenue)}</td><td>{money(curr.revenue)}</td></> : null}
                 </tr>
@@ -186,7 +188,10 @@ export default function ComparisonPage() {
     'عمليات الحالي': Number(row.current?.tasks || 0),
     [people ? 'مستحق السابق' : 'أمتار السابق']: Number(people ? row.previous?.earnings || 0 : row.previous?.meters || 0),
     [people ? 'مستحق الحالي' : 'أمتار الحالي']: Number(people ? row.current?.earnings || 0 : row.current?.meters || 0),
-    'نسبة التغير %': Number(pct(people ? row.current?.earnings : row.current?.meters, people ? row.previous?.earnings : row.previous?.meters).toFixed(2)),
+    'نسبة التغير %': (() => {
+      const value = pct(people ? row.current?.earnings : row.current?.meters, people ? row.previous?.earnings : row.previous?.meters)
+      return value == null ? 'جديد' : Number(value.toFixed(2))
+    })(),
     ...(people ? {
       'حضور السابق': Number(row.previous?.present_days || 0),
       'حضور الحالي': Number(row.current?.present_days || 0),
@@ -200,7 +205,10 @@ export default function ComparisonPage() {
   }))
 
   const excelSheets = [
-    { name: 'ملخص المقارنة', rows: overviewRows.map(([label, prev, curr]) => ({ 'المؤشر': label, 'الشهر السابق': Number(prev || 0), 'الشهر الحالي': Number(curr || 0), 'الفرق': Number(curr || 0) - Number(prev || 0), 'نسبة التغير %': Number(pct(curr, prev).toFixed(2)) })) },
+    { name: 'ملخص المقارنة', rows: overviewRows.map(([label, prev, curr]) => {
+      const change = pct(curr, prev)
+      return { 'المؤشر': label, 'الشهر السابق': Number(prev || 0), 'الشهر الحالي': Number(curr || 0), 'الفرق': Number(curr || 0) - Number(prev || 0), 'نسبة التغير %': change == null ? 'جديد' : Number(change.toFixed(2)) }
+    }) },
     { name: 'المشاريع', rows: namedSheet(projectRows, false, true) },
     { name: 'القطاعات', rows: namedSheet(sectionRows, false, true) },
     { name: 'المهندسين', rows: namedSheet(engineerRows, true) },

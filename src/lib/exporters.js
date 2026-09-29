@@ -1,19 +1,44 @@
-import * as XLSX from 'xlsx'
+import writeExcelFile from 'write-excel-file/browser'
 import html2canvas from 'html2canvas'
 import { jsPDF } from 'jspdf'
 
 const safeName = (value) => String(value || 'export').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 80)
 
-export function exportExcel({ filename, sheets }) {
-  const workbook = XLSX.utils.book_new()
-  sheets.forEach(({ name, rows }) => {
-    const worksheet = XLSX.utils.json_to_sheet(rows || [])
-    worksheet['!cols'] = Object.keys((rows || [])[0] || {}).map((key) => ({
-      wch: Math.min(38, Math.max(12, key.length + 4)),
-    }))
-    XLSX.utils.book_append_sheet(workbook, worksheet, safeName(name).slice(0, 31) || 'Sheet1')
+export async function exportExcel({ filename, sheets }) {
+  const workbookSheets = (sheets || []).map(({ name, rows = [] }) => {
+    const keys = Object.keys(rows[0] || {})
+    if (!keys.length) {
+      return {
+        sheet: safeName(name).slice(0, 31) || 'Sheet1',
+        data: [['لا توجد بيانات']],
+        columns: [{ width: 20 }],
+        rightToLeft: true,
+        stickyRowsCount: 1,
+      }
+    }
+
+    const data = [
+      keys.map((key) => ({ value: key, fontWeight: 'bold' })),
+      ...rows.map((row) => keys.map((key) => {
+        const value = row[key]
+        return value == null ? '' : value
+      })),
+    ]
+
+    return {
+      sheet: safeName(name).slice(0, 31) || 'Sheet1',
+      data,
+      columns: keys.map((key) => ({ width: Math.min(38, Math.max(12, key.length + 4)) })),
+      rightToLeft: true,
+      stickyRowsCount: 1,
+    }
   })
-  XLSX.writeFile(workbook, `${safeName(filename)}.xlsx`)
+
+  const output = workbookSheets.length
+    ? workbookSheets
+    : [{ sheet: 'Sheet1', data: [['لا توجد بيانات']], columns: [{ width: 20 }], rightToLeft: true }]
+
+  await writeExcelFile(output, { fontFamily: 'Arial', fontSize: 10 }).toFile(`${safeName(filename)}.xlsx`)
 }
 
 export async function exportElementPdf(element, filename) {
@@ -24,6 +49,16 @@ export async function exportElementPdf(element, filename) {
     backgroundColor: '#ffffff',
     windowWidth: Math.max(element.scrollWidth, element.clientWidth),
     windowHeight: Math.max(element.scrollHeight, element.clientHeight),
+    onclone: (clonedDocument) => {
+      clonedDocument.querySelectorAll('.data-table-wrap, .compact-table, .productivity-scroll, .person-operation-notes__list').forEach((node) => {
+        node.style.maxHeight = 'none'
+        node.style.height = 'auto'
+        node.style.overflow = 'visible'
+      })
+      clonedDocument.querySelectorAll('.data-table th').forEach((node) => {
+        node.style.position = 'static'
+      })
+    },
   })
 
   const pdf = new jsPDF({

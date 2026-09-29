@@ -98,7 +98,7 @@ export default function PersonDetailsModal({ person, selectedCycle, monthKey, on
 
   return (
     <Modal open={Boolean(person)} title={`تفاصيل العمليات والحضور — ${person?.name || ''}`} onClose={onClose} width="xl">
-      {query.isLoading ? <div className="page-loader">جاري تحميل التفاصيل الكاملة...</div> : (
+      {query.isLoading ? <div className="page-loader">جاري تحميل التفاصيل الكاملة...</div> : query.isError ? <div className="page-error">{query.error?.message || 'تعذر تحميل تفاصيل الشخص'}</div> : (
         <div className="person-details-report" ref={printRef}>
           <section className="details-summary-grid">
             <div><BriefcaseBusiness /><span>العمليات</span><strong>{number(stats.tasks)}</strong></div>

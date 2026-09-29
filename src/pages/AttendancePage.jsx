@@ -8,11 +8,13 @@ import { date, roleLabels } from '../lib/format'
 import EmptyState from '../components/EmptyState'
 import ExportButtons from '../components/ExportButtons'
 import { smartIncludes } from '../lib/smartSearch'
+import { useFeedback } from '../context/FeedbackContext'
 
 export default function AttendancePage() {
   const { monthKey } = useCycle()
   const { permissions } = useAuth()
   const queryClient = useQueryClient()
+  const feedback = useFeedback()
   const [role, setRole] = useState('')
   const [person, setPerson] = useState('')
   const [status, setStatus] = useState('')
@@ -33,8 +35,36 @@ export default function AttendancePage() {
     return true
   }), [rows, role, person, status, queryText])
 
-  const absenceMutation = useMutation({ mutationFn: ({ personId, attendanceDate, type }) => appService.saveAbsence(personId, attendanceDate, type), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cycle-data', 'attendance'] }) })
-  const noteMutation = useMutation({ mutationFn: ({ personId, attendanceDate, note }) => appService.saveAttendanceNote(personId, attendanceDate, note), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cycle-data', 'attendance'] }) })
+  const absenceMutation = useMutation({
+    mutationFn: ({ personId, attendanceDate, type }) => appService.saveAbsence(personId, attendanceDate, type),
+    onSuccess: async () => {
+      setError('')
+      await queryClient.invalidateQueries({ queryKey: ['cycle-data', 'attendance'] })
+    },
+    onError: (err) => {
+      const message = err.message || 'تعذر تحديث نوع الغياب'
+      setError(message)
+      feedback.error('تعذر تحديث الغياب', message)
+    },
+  })
+  const noteMutation = useMutation({
+    mutationFn: ({ personId, attendanceDate, note }) => appService.saveAttendanceNote(personId, attendanceDate, note),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ['cycle-data', 'attendance'] })
+      const key = `${variables.personId}-${variables.attendanceDate}`
+      setDraftNotes((current) => {
+        const next = { ...current }
+        delete next[key]
+        return next
+      })
+      feedback.success('تم حفظ الملاحظة', 'تم تحديث ملاحظة الحضور بنجاح.')
+    },
+    onError: (err) => {
+      const message = err.message || 'تعذر حفظ الملاحظة'
+      setError(message)
+      feedback.error('تعذر حفظ الملاحظة', message)
+    },
+  })
 
   const saveNote = async (row) => {
     setError('')
@@ -58,6 +88,7 @@ export default function AttendancePage() {
   }]
 
   if (query.isLoading) return <div className="page-loader">جاري تحميل الحضور والغياب...</div>
+  if (query.isError) return <div className="page-error">{query.error?.message || 'تعذر تحميل الحضور والغياب'}</div>
 
   return (
     <div className="page-stack">
@@ -75,7 +106,7 @@ export default function AttendancePage() {
             <thead><tr><th>الشخص</th><th>الدور</th><th>التاريخ</th><th>الحالة</th><th>نوع الغياب</th><th>الملاحظة</th>{permissions.canManageAttendance ? <th>حفظ</th> : null}</tr></thead>
             <tbody>{filtered.map((row) => {
               const key = `${row.person_id}-${row.attendance_date}`
-              return <tr key={key}><td className="strong-cell">{row.person_name}</td><td>{roleLabels[row.role]}</td><td>{date(row.attendance_date)} {row.is_friday ? <span className="count-chip">جمعة</span> : null}</td><td><span className={`status-pill ${row.status === 'present' ? 'success' : row.status === 'absent' ? 'danger' : 'neutral'}`}>{row.status === 'present' ? 'حاضر' : row.status === 'absent' ? 'غياب' : 'قادم'}</span></td><td><select disabled={!permissions.canManageAttendance || row.status !== 'absent'} value={row.absence_type || ''} onChange={(e) => absenceMutation.mutate({ personId: row.person_id, attendanceDate: row.attendance_date, type: e.target.value })}><option value="">غير محدد</option><option value="excused">غياب بإذن</option><option value="unexcused">غياب بدون إذن</option></select></td><td><input className="table-input" disabled={!permissions.canManageAttendance} value={draftNotes[key] ?? row.note ?? ''} onChange={(e) => setDraftNotes((current) => ({ ...current, [key]: e.target.value }))} /></td>{permissions.canManageAttendance ? <td><button className="icon-btn small" onClick={() => saveNote(row)}><Save size={15} /></button></td> : null}</tr>
+              return <tr key={key}><td className="strong-cell">{row.person_name}</td><td>{roleLabels[row.role]}</td><td>{date(row.attendance_date)} {row.is_friday ? <span className="count-chip">جمعة</span> : null}</td><td><span className={`status-pill ${row.status === 'present' ? 'success' : row.status === 'absent' ? 'danger' : 'neutral'}`}>{row.status === 'present' ? 'حاضر' : row.status === 'absent' ? 'غياب' : 'قادم'}</span></td><td><select disabled={!permissions.canManageAttendance || row.status !== 'absent' || absenceMutation.isPending} value={row.absence_type || ''} onChange={(e) => absenceMutation.mutate({ personId: row.person_id, attendanceDate: row.attendance_date, type: e.target.value })}><option value="">غير محدد</option><option value="excused">غياب بإذن</option><option value="unexcused">غياب بدون إذن</option></select></td><td><input className="table-input" disabled={!permissions.canManageAttendance} value={draftNotes[key] ?? row.note ?? ''} onChange={(e) => setDraftNotes((current) => ({ ...current, [key]: e.target.value }))} /></td>{permissions.canManageAttendance ? <td><button className="icon-btn small" disabled={noteMutation.isPending} onClick={() => saveNote(row)}><Save size={15} /></button></td> : null}</tr>
             })}</tbody>
           </table>
           {!filtered.length ? <EmptyState /> : null}

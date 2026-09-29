@@ -17,7 +17,7 @@
     "react-dom": "19.3.0",
     "react-router-dom": "7.18.4",
     "recharts": "3.10.1",
-    "xlsx": "0.18.5",
+    "write-excel-file": "^4.1.1",
     "jspdf": "4.2.1",
     "html2canvas": "1.4.1"
   },

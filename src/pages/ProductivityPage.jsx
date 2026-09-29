@@ -117,7 +117,7 @@ export default function ProductivityPage() {
       const teamRows = await appService.submissionTeam(row.id)
       const team = { engineer: [], technician: [], assistant: [], worker: [] }
       teamRows.forEach((person) => team[person.role]?.push(person.person_id))
-      setEditInitial({ work_date: row.work_date, project: row.project, section: row.section, meters: row.meters, team })
+      setEditInitial({ work_date: row.work_date, project: row.project, section: row.section, price_per_meter: row.price_per_meter, meters: row.meters, team })
     } catch (err) {
       setEditing(null)
       setError(err.message || 'تعذر تحميل بيانات العملية')
@@ -151,7 +151,8 @@ export default function ProductivityPage() {
     try { await deleteMutation.mutateAsync(row.id) } catch (err) { setError(err.message) }
   }
 
-  if (!selectedCycle || rowsQuery.isLoading) return <div className="page-loader">جاري تحميل البيانات المحسوبة...</div>
+  if (!selectedCycle || rowsQuery.isLoading || refsQuery.isLoading) return <div className="page-loader">جاري تحميل البيانات المحسوبة...</div>
+  if (rowsQuery.isError || refsQuery.isError) return <div className="page-error">{rowsQuery.error?.message || refsQuery.error?.message || 'تعذر تحميل البيانات المحسوبة'}</div>
 
   return (
     <div className="page-stack">
