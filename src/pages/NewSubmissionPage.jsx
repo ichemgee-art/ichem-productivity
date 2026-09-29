@@ -20,7 +20,7 @@ export default function NewSubmissionPage() {
     },
   })
 
-  const save = async ({ form, team, submitMode }) => {
+  const save = async ({ form, team, submitMode, clientRequestId }) => {
     const result = await mutation.mutateAsync({
       p_work_date: form.work_date,
       p_project_name: form.project.trim(),
@@ -31,6 +31,7 @@ export default function NewSubmissionPage() {
       p_assistant_ids: team.assistant,
       p_worker_ids: team.worker,
       p_source: 'react_dashboard',
+      p_client_request_id: clientRequestId,
     })
 
     const saved = {
