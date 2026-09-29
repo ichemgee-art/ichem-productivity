@@ -3,7 +3,7 @@ name: React Build
 on:
   push:
     branches:
-      - react-rebuild
+      - production-audit-hardening
     paths-ignore:
       - package-lock.json
 
@@ -37,6 +37,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Audit high severity dependencies
+        run: npm audit --audit-level=high
 
       - name: Build
         run: npm run build
