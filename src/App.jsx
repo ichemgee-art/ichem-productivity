@@ -11,6 +11,7 @@ import AttendancePage from './pages/AttendancePage'
 import ProjectsPage from './pages/ProjectsPage'
 import SectionsPage from './pages/SectionsPage'
 import ComparisonPage from './pages/ComparisonPage'
+import AuditPage from './pages/AuditPage'
 
 function RequireAuth({ children }) {
   const { session, loading } = useAuth()
@@ -22,6 +23,11 @@ function RequireAuth({ children }) {
 function RequireCreate({ children }) {
   const { permissions } = useAuth()
   return permissions.canCreateSubmission ? children : <Navigate to="/" replace />
+}
+
+function RequireAdmin({ children }) {
+  const { permissions } = useAuth()
+  return permissions.isAdmin ? children : <Navigate to="/" replace />
 }
 
 export default function App() {
@@ -43,6 +49,7 @@ export default function App() {
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="sections" element={<SectionsPage />} />
         <Route path="comparison" element={<ComparisonPage />} />
+        <Route path="audit" element={<RequireAdmin><AuditPage /></RequireAdmin>} />
       </Route>
       <Route path="*" element={<Navigate to={session ? '/' : '/login'} replace />} />
     </Routes>
