@@ -37,6 +37,7 @@ const fieldDefs = [
   ['total', 'الإجمالي', (v) => money(v)],
   ['review_status', 'المراجعة', (v) => v === 'reviewed' ? 'تمت المراجعة' : 'لم تتم'],
   ['name', 'الاسم'],
+  ['role', 'الدور', (v) => roleLabels[v] || v || '—'],
   ['price_per_meter', 'السعر', (v) => money(v)],
   ['active', 'الحالة', (v) => v ? 'نشط' : 'معطل'],
 ]
@@ -113,9 +114,28 @@ function eventSummary(row) {
   return row.entity_id || '—'
 }
 
-function canRestore(row, restoredIds) {
+function hasNewerBlockingEvent(row, rows) {
+  const relevant = row.action === 'update'
+    ? new Set(['update', 'delete', 'restore'])
+    : row.action === 'review_status'
+      ? new Set(['review_status', 'delete', 'restore'])
+      : row.action === 'update_note'
+        ? new Set(['update_note', 'delete', 'restore'])
+        : new Set()
+
+  if (!relevant.size) return false
+  return rows.some((other) =>
+    Number(other.id) > Number(row.id)
+    && other.entity_type === row.entity_type
+    && other.entity_id === row.entity_id
+    && relevant.has(other.action)
+  )
+}
+
+function canRestore(row, restoredIds, rows) {
   if (restoredIds.has(String(row.id))) return false
   if (row.entity_type !== 'submission') return false
+  if (hasNewerBlockingEvent(row, rows)) return false
   const d = row.details || {}
   if (row.action === 'update') return Boolean(d.before)
   if (row.action === 'delete') return Boolean(d.submission)
@@ -217,7 +237,7 @@ export default function AuditPage() {
           {filtered.map((row) => {
             const changes = changeRows(row)
             const restored = restoredIds.has(String(row.id))
-            const reversible = canRestore(row, restoredIds)
+            const reversible = canRestore(row, restoredIds, rows)
             return (
               <article className={`audit-event ${row.action === 'restore' ? 'is-restore' : ''}`} key={row.id}>
                 <div className="audit-event__rail">
