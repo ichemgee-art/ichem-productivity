@@ -26,7 +26,7 @@ const peopleLabels = { engineer: 'المهندسين', technician: 'الفنيي
 
 export default function AppLayout() {
   const { profile, user, permissions, signOut } = useAuth()
-  const { monthKey, selectedCycle, cycles, loading: cyclesLoading, selectCycle, refreshCycles } = useCycle()
+  const { monthKey, selectedCycle, cycles, loading: cyclesLoading, error: cyclesError, selectCycle, refreshCycles } = useCycle()
   const queryClient = useQueryClient()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -117,7 +117,9 @@ export default function AppLayout() {
             <button className="icon-btn" onClick={signOut} title="تسجيل الخروج"><LogOut size={18} /></button>
           </div>
         </header>
-        <main className="page-content"><PageErrorBoundary resetKey={location.pathname}><Outlet /></PageErrorBoundary></main>
+        <main className="page-content">
+          {cyclesError ? <div className="page-error">{cyclesError.message || 'تعذر تحميل دورات النظام'}</div> : <PageErrorBoundary resetKey={location.pathname}><Outlet /></PageErrorBoundary>}
+        </main>
       </div>
     </div>
   )
