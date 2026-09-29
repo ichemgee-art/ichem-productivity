@@ -376,3 +376,20 @@ body{font-size:16px;line-height:1.65}
   .details-toolbar{padding:10px}
   .modal-card.modal-xl{width:100vw;max-height:100vh;border-radius:0}
 }
+
+/* Explicit "none" team option */
+.pick-person.pick-none{
+  margin-bottom:5px;
+  border:1px dashed #cfd9e7;
+  background:#f8fafc;
+  color:#53657e;
+  font-weight:800;
+}
+.pick-person.pick-none:hover{background:#f1f5fa}
+.pick-person.pick-none.is-selected{
+  border-style:solid;
+  border-color:#9fbee7;
+  background:#eef5ff;
+  color:var(--navy-900);
+}
+.pick-person.pick-none small{color:#7b8ca3}
