@@ -186,8 +186,11 @@ function PersonForm({ person, saving, onSave }) {
   const submit = async (event) => {
     event.preventDefault()
     setError('')
-    try { await onSave({ id: person.id || null, name: name.trim(), role: person.role, active }) } catch (err) { setError(err.message || 'تعذر الحفظ') }
+    const cleanName = name.trim()
+    if (!cleanName) return setError('الاسم مطلوب')
+    if (cleanName.length > 120) return setError('الاسم طويل جدًا')
+    try { await onSave({ id: person.id || null, name: cleanName, role: person.role, active }) } catch (err) { setError(err.message || 'تعذر الحفظ') }
   }
 
-  return <form className="modal-form" onSubmit={submit} noValidate><label className="field"><span>الاسم</span><input required value={name} onChange={(e) => setName(e.target.value)} /></label><label className="toggle-row"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} /><span>الاسم نشط ويمكن اختياره في العمليات الجديدة</span></label>{error ? <div className="form-error">{error}</div> : null}<button className="btn btn-primary" disabled={saving}>{saving ? 'جاري الحفظ...' : 'حفظ'}</button></form>
+  return <form className="modal-form" onSubmit={submit} noValidate><label className="field"><span>الاسم</span><input required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} /></label><label className="toggle-row"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} /><span>الاسم نشط ويمكن اختياره في العمليات الجديدة</span></label>{error ? <div className="form-error">{error}</div> : null}<button className="btn btn-primary" disabled={saving}>{saving ? 'جاري الحفظ...' : 'حفظ'}</button></form>
 }
