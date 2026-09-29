@@ -524,3 +524,43 @@ body{font-size:16px;line-height:1.65}
   .operation-note-editor textarea{font-size:11px;min-height:54px}
   .person-operation-notes{padding:10px}
 }
+
+
+/* Calculated-data two-axis scroll */
+.productivity-scroll{
+  max-height:calc(100dvh - 310px);
+  overflow:auto;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable both-edges;
+  border-top:1px solid #edf1f5;
+}
+.productivity-scroll .data-table{
+  min-width:1560px;
+}
+.productivity-scroll::-webkit-scrollbar{
+  width:13px;
+  height:13px;
+}
+.productivity-scroll::-webkit-scrollbar-track{
+  background:#edf1f5;
+  border-radius:999px;
+}
+.productivity-scroll::-webkit-scrollbar-thumb{
+  background:#929292;
+  border-radius:999px;
+  border:3px solid #edf1f5;
+}
+.productivity-scroll::-webkit-scrollbar-thumb:hover{
+  background:#747474;
+}
+.productivity-scroll{
+  scrollbar-width:auto;
+  scrollbar-color:#929292 #edf1f5;
+}
+@media(max-width:1180px){
+  .productivity-scroll{max-height:calc(100dvh - 270px)}
+}
+@media(max-width:760px){
+  .productivity-scroll{max-height:calc(100dvh - 230px)}
+  .productivity-scroll .data-table{min-width:1450px}
+}
