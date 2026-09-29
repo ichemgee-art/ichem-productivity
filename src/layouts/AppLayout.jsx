@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   BarChart3, ClipboardPlus, Database, FolderKanban, Gauge, LogOut, Menu,
-  Settings2, ShieldCheck, UserRoundCog, Users, X, CalendarDays, Wrench, ArrowLeftRight,
+  Settings2, ShieldCheck, UserRoundCog, Users, X, CalendarDays, Wrench, ArrowLeftRight, History,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useCycle } from '../context/CycleContext'
@@ -19,6 +19,7 @@ const pageTitles = {
   '/projects': ['المشاريع', 'قائمة المشاريع واستخدامها داخل التشغيل.'],
   '/sections': ['القطاعات والأسعار', 'القطاعات وأسعار المتر الحالية والتاريخ التشغيلي.'],
   '/comparison': ['مقارنة الشهور', 'مقارنة شاملة بين دورتين من حيث التشغيل والحضور والأداء.'],
+  '/audit': ['سجل التعديلات', 'كل التغييرات ومن نفذها مع إمكانية الاسترجاع الآمن.'],
 }
 
 const peopleLabels = { engineer: 'المهندسين', technician: 'الفنيين', assistant: 'المساعدين', worker: 'العمال' }
@@ -61,6 +62,7 @@ export default function AppLayout() {
     { to: '/people/worker', label: 'العمال', icon: Users },
     { to: '/attendance', label: 'الحضور والغياب', icon: CalendarDays },
     { to: '/comparison', label: 'مقارنة الشهور', icon: ArrowLeftRight },
+    ...(permissions.canViewAudit ? [{ to: '/audit', label: 'سجل التعديلات', icon: History }] : []),
     { to: '/projects', label: 'المشاريع', icon: FolderKanban },
     { to: '/sections', label: 'القطاعات والأسعار', icon: Settings2 },
   ]
