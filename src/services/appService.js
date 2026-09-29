@@ -78,12 +78,32 @@ export const appService = {
     return unwrap(await supabase.rpc('set_review_status', { p_submission_id: id, p_reviewed: reviewed }))
   },
 
+  async saveSubmissionNote(id, note) {
+    return unwrap(await supabase.rpc('upsert_submission_note', {
+      p_submission_id: id,
+      p_note: note || '',
+    }))
+  },
+
   async deleteSubmission(id) {
     return unwrap(await supabase.rpc('delete_productivity_submission', { p_submission_id: id }))
   },
 
   async personStats(monthKey, role) {
     return unwrap(await supabase.rpc('person_cycle_stats', { p_month_key: monthKey, p_role: role })) || []
+  },
+
+  async personNotes(role, start, end) {
+    return unwrap(
+      await supabase
+        .from('v_person_operations')
+        .select('person_id,submission_id,work_date,project,note')
+        .eq('role', role)
+        .neq('note', '')
+        .gte('work_date', start)
+        .lte('work_date', end)
+        .order('work_date', { ascending: false }),
+    ) || []
   },
 
   async people(role) {

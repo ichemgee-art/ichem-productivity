@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { MessageSquareText, Pencil, Plus, Trash2 } from 'lucide-react'
 import { appService } from '../services/appService'
 import { useCycle } from '../context/CycleContext'
 import { useAuth } from '../context/AuthContext'
-import { money, number, roleLabels, rolePlural } from '../lib/format'
+import { date, money, number, roleLabels, rolePlural } from '../lib/format'
 import Modal from '../components/Modal'
 import EmptyState from '../components/EmptyState'
 import PersonDetailsModal from '../components/PersonDetailsModal'
@@ -20,15 +20,28 @@ export default function PeoplePage({ role = 'engineer' }) {
 
 
   const statsQuery = useQuery({ queryKey: ['cycle-data', 'people-stats', monthKey, role], queryFn: () => appService.personStats(monthKey, role), enabled: Boolean(monthKey) })
+  const notesQuery = useQuery({
+    queryKey: ['cycle-data', 'person-notes', monthKey, role],
+    queryFn: () => appService.personNotes(role, selectedCycle.cycle_start, selectedCycle.cycle_end),
+    enabled: Boolean(selectedCycle),
+  })
   const peopleQuery = useQuery({ queryKey: ['people', role], queryFn: () => appService.people(role) })
 
   const rows = useMemo(() => {
     const statsMap = new Map((statsQuery.data || []).map((row) => [row.person_id, row]))
+    const notesMap = new Map()
+    ;(notesQuery.data || []).forEach((note) => {
+      const current = notesMap.get(note.person_id) || []
+      current.push(note)
+      notesMap.set(note.person_id, current)
+    })
+
     return (peopleQuery.data || []).map((person) => ({
       ...person,
       ...(statsMap.get(person.id) || { tasks: 0, meters: 0, earnings: 0, present_days: 0, absent_days: 0, upcoming_days: 0, pool_percent: 0 }),
+      operation_notes: notesMap.get(person.id) || [],
     }))
-  }, [statsQuery.data, peopleQuery.data])
+  }, [statsQuery.data, notesQuery.data, peopleQuery.data])
 
   const refreshPeople = async () => {
     await queryClient.invalidateQueries({ queryKey: ['people'] })
@@ -87,7 +100,7 @@ export default function PeoplePage({ role = 'engineer' }) {
 
   const showDetails = (person) => setDetails(person)
 
-  const loading = statsQuery.isLoading || peopleQuery.isLoading || statsQuery.isFetching || peopleQuery.isFetching
+  const loading = statsQuery.isLoading || notesQuery.isLoading || peopleQuery.isLoading || statsQuery.isFetching || notesQuery.isFetching || peopleQuery.isFetching
   if (loading) return <div className="page-loader">جاري تحميل بيانات {rolePlural[role] || 'الأفراد'}...</div>
 
   return (
@@ -127,9 +140,27 @@ export default function PeoplePage({ role = 'engineer' }) {
               <div className="pool-stat"><span>نسبة Pool</span><strong>{number(person.pool_percent)}%</strong></div>
             </div>
 
+            {person.operation_notes.length ? (
+              <div className="person-operation-notes">
+                <div className="person-operation-notes__head">
+                  <span><MessageSquareText size={15} /> ملاحظات العمليات</span>
+                  <b>{person.operation_notes.length}</b>
+                </div>
+                <div className="person-operation-notes__list">
+                  {person.operation_notes.map((note) => (
+                    <div className="person-operation-note" key={note.submission_id}>
+                      <p>{note.note}</p>
+                      <small>{note.project || 'بدون مشروع'} · {date(note.work_date)}</small>
+                    </div>
+                  ))}
+                </div>
+                {person.operation_notes.length > 2 ? <span className="person-operation-notes__more">مرّر داخل الملاحظات لعرض الكل</span> : null}
+              </div>
+            ) : null}
+
             <button className="person-details-cta" type="button" onClick={() => showDetails(person)}>
               <span>عرض الملف التشغيلي الكامل</span>
-              <small>العمليات · المشاريع · الحضور · الغياب · الفلاتر</small>
+              <small>العمليات · المشاريع · الملاحظات · الحضور · الغياب · الفلاتر</small>
             </button>
           </article>
         ))}

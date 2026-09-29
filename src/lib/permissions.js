@@ -6,6 +6,7 @@ export const permissionsFor = (appRole) => ({
   canEditSubmission: appRole === 'admin',
   canDeleteSubmission: appRole === 'admin',
   canReviewSubmission: appRole === 'admin',
+  canEditSubmissionNotes: ['admin', 'data_entry'].includes(appRole),
   canManagePeople: appRole === 'admin',
   canManageAttendance: appRole === 'admin',
   canManageProjects: appRole === 'admin',

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Pencil, Search, Trash2, XCircle } from 'lucide-react'
 import { useCycle } from '../context/CycleContext'
@@ -42,7 +42,7 @@ export default function ProductivityPage() {
     if (project && row.project !== project) return false
     if (section && row.section !== section) return false
     if (review && row.review_status !== review) return false
-    if (!smartIncludes(queryText, row.project, row.section, row.engineers, row.technicians, row.assistants, row.workers, row.work_date, row.meters, row.price_per_meter, row.total)) return false
+    if (!smartIncludes(queryText, row.project, row.section, row.engineers, row.technicians, row.assistants, row.workers, row.work_date, row.meters, row.price_per_meter, row.total, row.note)) return false
     return true
   }), [rows, project, section, review, queryText])
 
@@ -65,6 +65,7 @@ export default function ProductivityPage() {
       'سعر المتر': Number(row.price_per_meter || 0),
       'الإجمالي': Number(row.total || 0),
       'المراجعة': row.review_status === 'reviewed' ? 'تمت المراجعة' : 'لم تتم',
+      'الملاحظات': row.note || '',
     })),
   }]
 
@@ -81,6 +82,15 @@ export default function ProductivityPage() {
     },
     onError: (err) => feedback.error('تعذر تحديث المراجعة', err.message || 'حدث خطأ غير متوقع'),
   })
+  const noteMutation = useMutation({
+    mutationFn: ({ id, note }) => appService.saveSubmissionNote(id, note),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['cycle-data'] })
+      await queryClient.invalidateQueries({ queryKey: ['person-full-details'] })
+    },
+    onError: (err) => feedback.error('تعذر حفظ الملاحظة', err.message || 'حدث خطأ غير متوقع'),
+  })
+
   const deleteMutation = useMutation({
     mutationFn: appService.deleteSubmission,
     onSuccess: async () => {
@@ -153,7 +163,7 @@ export default function ProductivityPage() {
 
       <section className="panel" ref={exportRef}>
         <div className="filters-bar">
-          <div className="input-with-icon grow"><Search size={16} /><input value={queryText} onChange={(e) => setQueryText(e.target.value)} placeholder="بحث في المشروع، القطاع، المهندس أو الفريق..." /></div>
+          <div className="input-with-icon grow"><Search size={16} /><input value={queryText} onChange={(e) => setQueryText(e.target.value)} placeholder="بحث في المشروع، القطاع، الفريق أو الملاحظات..." /></div>
           <select value={project} onChange={(e) => setProject(e.target.value)}><option value="">كل المشاريع</option>{projects.map((item) => <option key={item}>{item}</option>)}</select>
           <select value={section} onChange={(e) => setSection(e.target.value)}><option value="">كل القطاعات</option>{sections.map((item) => <option key={item}>{item}</option>)}</select>
           <select value={review} onChange={(e) => setReview(e.target.value)}><option value="">كل حالات المراجعة</option><option value="reviewed">تمت المراجعة</option><option value="not_reviewed">لم تتم المراجعة</option></select>
@@ -162,7 +172,7 @@ export default function ProductivityPage() {
         {error ? <div className="inline-error">{error}</div> : null}
         <div className="data-table-wrap">
           <table className="data-table">
-            <thead><tr><th>التاريخ</th><th>المشروع</th><th>المهندسين</th><th>الفنيين</th><th>المساعدين</th><th>العمال</th><th>القطاع</th><th>الأمتار</th><th>سعر المتر</th><th>الإجمالي</th><th>المراجعة</th>{permissions.isAdmin ? <th>إدارة</th> : null}</tr></thead>
+            <thead><tr><th>التاريخ</th><th>المشروع</th><th>المهندسين</th><th>الفنيين</th><th>المساعدين</th><th>العمال</th><th>القطاع</th><th>الأمتار</th><th>سعر المتر</th><th>الإجمالي</th><th>المراجعة</th>{permissions.isAdmin ? <th>إدارة</th> : null}<th>ملاحظات</th></tr></thead>
             <tbody>
               {filtered.map((row) => (
                 <tr key={row.id}>
@@ -173,6 +183,14 @@ export default function ProductivityPage() {
                   <td>{row.section}</td><td>{number(row.meters)}</td><td>{money(row.price_per_meter)}</td><td className="strong-cell">{money(row.total)}</td>
                   <td><span className={`status-pill ${row.review_status === 'reviewed' ? 'success' : 'warning'}`}>{row.review_status === 'reviewed' ? 'تمت المراجعة' : 'لم تتم'}</span></td>
                   {permissions.isAdmin ? <td><div className="row-actions"><button className="icon-btn small" title="تعديل" onClick={() => beginEdit(row)}><Pencil size={15} /></button><button className="icon-btn small" title={row.review_status === 'reviewed' ? 'إلغاء المراجعة' : 'اعتماد المراجعة'} onClick={() => reviewMutation.mutate({ id: row.id, reviewed: row.review_status !== 'reviewed' })}>{row.review_status === 'reviewed' ? <XCircle size={15} /> : <CheckCircle2 size={15} />}</button><button className="icon-btn small danger" title="حذف" onClick={() => remove(row)}><Trash2 size={15} /></button></div></td> : null}
+                  <td className="operation-note-column">
+                    <SubmissionNoteCell
+                      row={row}
+                      editable={permissions.canEditSubmissionNotes}
+                      saving={noteMutation.isPending && noteMutation.variables?.id === row.id}
+                      onSave={(id, note) => noteMutation.mutateAsync({ id, note })}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -184,6 +202,55 @@ export default function ProductivityPage() {
       <Modal open={Boolean(editing)} title="تعديل عملية الإنتاجية" onClose={() => { setEditing(null); setEditInitial(null) }} width="xl">
         {!editInitial || refsQuery.isLoading ? <div className="page-loader">جاري تحميل بيانات العملية...</div> : <SubmissionForm references={refsQuery.data} initial={editInitial} onSubmit={update} submitting={updateMutation.isPending} mode="edit" />}
       </Modal>
+    </div>
+  )
+}
+
+
+function SubmissionNoteCell({ row, editable, saving, onSave }) {
+  const [value, setValue] = useState(row.note || '')
+  const [state, setState] = useState('idle')
+
+  useEffect(() => {
+    setValue(row.note || '')
+    setState('idle')
+  }, [row.id, row.note])
+
+  const save = async () => {
+    const next = value.trim()
+    const current = (row.note || '').trim()
+    if (next === current) return
+
+    setState('saving')
+    try {
+      await onSave(row.id, next)
+      setState('saved')
+    } catch {
+      setState('error')
+    }
+  }
+
+  if (!editable) return <span className="operation-note-readonly">{row.note || '—'}</span>
+
+  return (
+    <div className="operation-note-editor">
+      <textarea
+        value={value}
+        maxLength={2000}
+        rows={2}
+        placeholder="اكتب ملاحظة للعملية..."
+        onChange={(event) => setValue(event.target.value)}
+        onBlur={save}
+        onKeyDown={(event) => {
+          if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+            event.preventDefault()
+            event.currentTarget.blur()
+          }
+        }}
+      />
+      <small className={state === 'error' ? 'error' : state === 'saved' ? 'saved' : ''}>
+        {saving || state === 'saving' ? 'جاري الحفظ...' : state === 'saved' ? 'تم الحفظ' : state === 'error' ? 'تعذر الحفظ' : 'Ctrl + Enter للحفظ'}
+      </small>
     </div>
   )
 }
