@@ -100,8 +100,10 @@ export default function PeoplePage({ role = 'engineer' }) {
 
   const showDetails = (person) => setDetails(person)
 
-  const loading = statsQuery.isLoading || notesQuery.isLoading || peopleQuery.isLoading || statsQuery.isFetching || notesQuery.isFetching || peopleQuery.isFetching
+  const loading = statsQuery.isLoading || notesQuery.isLoading || peopleQuery.isLoading
+  const loadError = statsQuery.error || notesQuery.error || peopleQuery.error
   if (loading) return <div className="page-loader">جاري تحميل بيانات {rolePlural[role] || 'الأفراد'}...</div>
+  if (loadError) return <div className="page-error">{loadError.message || 'تعذر تحميل بيانات الأفراد'}</div>
 
   return (
     <div className="page-stack">
