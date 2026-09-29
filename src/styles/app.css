@@ -393,3 +393,126 @@ body{font-size:16px;line-height:1.65}
   color:var(--navy-900);
 }
 .pick-person.pick-none small{color:#7b8ca3}
+
+
+/* Operation notes — keeps the existing productivity/card design intact */
+.operation-note-column{
+  min-width:260px;
+  max-width:340px;
+  white-space:normal!important;
+  text-align:right!important;
+}
+.operation-note-editor{display:grid;gap:5px;min-width:240px}
+.operation-note-editor textarea{
+  width:100%;
+  min-height:58px;
+  max-height:118px;
+  resize:vertical;
+  border:1px solid #dce4ef;
+  border-radius:10px;
+  background:#fbfcfe;
+  color:var(--text);
+  padding:9px 10px;
+  outline:none;
+  font-size:12px;
+  line-height:1.65;
+  transition:border-color .16s ease,box-shadow .16s ease,background .16s ease;
+}
+.operation-note-editor textarea::placeholder{color:#9aa8b9}
+.operation-note-editor textarea:focus{
+  border-color:#8bb3f0;
+  background:#fff;
+  box-shadow:0 0 0 3px rgba(47,120,239,.08);
+}
+.operation-note-editor small{
+  min-height:15px;
+  color:#8a98aa;
+  font-size:9px;
+  line-height:1.4;
+}
+.operation-note-editor small.saved{color:#16845b;font-weight:700}
+.operation-note-editor small.error{color:#c53a3a;font-weight:700}
+.operation-note-readonly{
+  display:block;
+  min-width:220px;
+  max-width:320px;
+  white-space:normal;
+  line-height:1.7;
+  color:#53647d;
+}
+.operation-note-cell{
+  min-width:240px;
+  max-width:360px;
+  white-space:normal!important;
+  text-align:right!important;
+  line-height:1.75;
+}
+
+.person-operation-notes{
+  display:grid;
+  gap:7px;
+  padding:11px 12px;
+  border:1px solid #dfe8f4;
+  border-radius:11px;
+  background:#f8fbff;
+}
+.person-operation-notes__head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.person-operation-notes__head>span{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  color:#526b8b;
+  font-size:10px;
+  font-weight:800;
+}
+.person-operation-notes__head>span svg{color:var(--blue-600)}
+.person-operation-notes__head>b{
+  min-width:23px;
+  height:23px;
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  background:#eaf2fd;
+  color:#47658c;
+  font-size:9px;
+}
+.person-operation-note{
+  min-width:0;
+  padding:8px 9px;
+  border-radius:9px;
+  background:#fff;
+  border:1px solid #e9eef5;
+}
+.person-operation-note p{
+  margin:0;
+  color:#273a55;
+  font-size:10px;
+  line-height:1.75;
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
+}
+.person-operation-note small{
+  display:block;
+  margin-top:5px;
+  color:#8a98aa;
+  font-size:8px;
+}
+.person-operation-notes__more{
+  color:#6f8199;
+  font-size:8px;
+  font-weight:700;
+}
+
+@media(max-width:760px){
+  .operation-note-column{min-width:230px}
+  .operation-note-editor{min-width:210px}
+  .operation-note-editor textarea{font-size:11px;min-height:54px}
+  .person-operation-notes{padding:10px}
+}
