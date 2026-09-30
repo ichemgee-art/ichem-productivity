@@ -2,11 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Check, LoaderCircle } from 'lucide-react'
 import PeoplePicker from './PeoplePicker'
 import { number } from '../lib/format'
+import { calculateSubmissionPreview } from '../lib/calculations'
 import { useFeedback } from '../context/FeedbackContext'
 
 const emptyTeam = { engineer: [], technician: [], assistant: [], worker: [] }
-const round2 = (value) => Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100
-
 export default function SubmissionForm({ references, initial, onSubmit, submitting, mode = 'create' }) {
   const feedback = useFeedback()
   const successTimer = useRef(null)
@@ -33,40 +32,29 @@ export default function SubmissionForm({ references, initial, onSubmit, submitti
   )
   const rules = references.rules || {}
   const techShare = Number(rules.tech_share ?? 0.7)
-  const assistantShare = Number(rules.assistant_share ?? 0.3)
   const workerRate = Number(rules.worker_rate_per_meter ?? 10)
   const metersNumber = Number(form.meters)
   const metersValid = form.meters !== '' && Number.isFinite(metersNumber) && metersNumber >= 0
   const businessToday = references.businessToday || ''
 
   const preview = useMemo(() => {
-    const meters = metersValid ? round2(metersNumber) : 0
-    const price = Number(section?.price_per_meter || 0)
-    const total = round2(meters * price)
-    const nt = team.technician.length
-    const na = team.assistant.length
-    const nw = team.worker.length
-    let techTotal = 0
-    let assistantTotal = 0
-
-    if (nt && na) {
-      techTotal = round2(total * techShare)
-      assistantTotal = round2(total - techTotal)
-    } else if (nt) {
-      techTotal = total
-    } else if (na) {
-      assistantTotal = total
-    }
-
-    const workerTotal = nw ? round2(meters * workerRate) : 0
+    const result = calculateSubmissionPreview({
+      meters: metersValid ? metersNumber : 0,
+      pricePerMeter: Number(section?.price_per_meter || 0),
+      technicianCount: team.technician.length,
+      assistantCount: team.assistant.length,
+      workerCount: team.worker.length,
+      techShare,
+      workerRatePerMeter: workerRate,
+    })
 
     return {
-      meters,
-      price,
-      total,
-      tech: nt ? round2(techTotal / nt) : 0,
-      assistant: na ? round2(assistantTotal / na) : 0,
-      worker: nw ? round2(workerTotal / nw) : 0,
+      meters: result.meters,
+      price: result.price,
+      total: result.total,
+      tech: result.techPerPerson,
+      assistant: result.assistantPerPerson,
+      worker: result.workerPerPerson,
     }
   }, [metersValid, metersNumber, section?.price_per_meter, team, techShare, workerRate])
 
