@@ -1,5 +1,10 @@
-export const round2 = (value) =>
-  Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100
+export const round2 = (value) => {
+  const number = Number(value || 0)
+  if (!Number.isFinite(number)) return 0
+  // A tiny relative-safe decimal nudge avoids binary floating-point half-cent drift
+  // and matches PostgreSQL numeric ROUND(..., 2) for our non-negative financial values.
+  return Math.round((number + 1e-9) * 100) / 100
+}
 
 const finiteNonNegative = (value, fallback = 0) => {
   const number = Number(value)
