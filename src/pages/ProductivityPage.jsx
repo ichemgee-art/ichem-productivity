@@ -157,6 +157,18 @@ export default function ProductivityPage() {
 
   return (
     <div className="page-stack">
+      <section className="productivity-export-toolbar">
+        <div className="productivity-export-toolbar__copy">
+          <strong>لوحة الإنتاجية</strong>
+          <span>تصدير البيانات المعروضة حاليًا بنفس الفلاتر المطبقة</span>
+        </div>
+        <ExportButtons
+          filename={`productivity-${monthKey}`}
+          excelSheets={excelSheets}
+          pdfTarget={exportRef}
+        />
+      </section>
+
       <section className="summary-line">
         <div><span>النتائج المعروضة</span><strong>{number(filtered.length)} عملية</strong></div>
         <div><span>إجمالي الأمتار</span><strong>{number(totals.meters)} م</strong></div>
@@ -169,7 +181,6 @@ export default function ProductivityPage() {
           <select value={project} onChange={(e) => setProject(e.target.value)}><option value="">كل المشاريع</option>{projects.map((item) => <option key={item}>{item}</option>)}</select>
           <select value={section} onChange={(e) => setSection(e.target.value)}><option value="">كل القطاعات</option>{sections.map((item) => <option key={item}>{item}</option>)}</select>
           <select value={review} onChange={(e) => setReview(e.target.value)}><option value="">كل حالات المراجعة</option><option value="reviewed">تمت المراجعة</option><option value="not_reviewed">لم تتم المراجعة</option></select>
-          <ExportButtons filename={`productivity-${monthKey}`} excelSheets={excelSheets} pdfTarget={exportRef} compact />
         </div>
         {error ? <div className="inline-error">{error}</div> : null}
         <div className="data-table-wrap productivity-scroll">
