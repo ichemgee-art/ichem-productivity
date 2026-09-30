@@ -117,7 +117,7 @@ export default function ProductivityPage() {
       const teamRows = await appService.submissionTeam(row.id)
       const team = { engineer: [], technician: [], assistant: [], worker: [] }
       teamRows.forEach((person) => team[person.role]?.push(person.person_id))
-      setEditInitial({ work_date: row.work_date, project: row.project, section: row.section, price_per_meter: row.price_per_meter, meters: row.meters, team })
+      setEditInitial({ work_date: row.work_date, project: row.project, section: row.section, price_per_meter: row.price_per_meter, meters: row.meters, expected_updated_at: row.updated_at, team })
     } catch (err) {
       setEditing(null)
       setError(err.message || 'تعذر تحميل بيانات العملية')
@@ -135,6 +135,7 @@ export default function ProductivityPage() {
       p_technician_ids: team.technician,
       p_assistant_ids: team.assistant,
       p_worker_ids: team.worker,
+      p_expected_updated_at: editInitial?.expected_updated_at || null,
     })
   }
 
