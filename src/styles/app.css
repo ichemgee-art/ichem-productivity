@@ -911,3 +911,201 @@ input:focus,select:focus,textarea:focus,.field input:focus,.field select:focus,.
 .hero-strip:not(.dashboard-hero):not(.management-dashboard-hero){background:linear-gradient(135deg,var(--brand-navy),color-mix(in srgb,var(--brand-navy) 88%,var(--brand-gold)))}
 .data-table th{background:color-mix(in srgb,var(--brand-navy) 7%,var(--brand-white));color:var(--brand-navy)}
 .data-table tbody tr:hover td{background:color-mix(in srgb,var(--brand-gold) 7%,var(--brand-white))}
+
+
+/* 2026-10-01 semantic status colors + dashboard readability */
+:root{
+  --success:#1F8A5B;
+  --success-soft:#EAF7F0;
+  --success-border:#B8E0CA;
+  --danger:#D64545;
+  --danger-soft:#FFF0F0;
+  --danger-border:#F0C2C2;
+  --warning:#B67A00;
+  --warning-soft:#FFF7E6;
+  --warning-border:#EED79E;
+}
+
+/* semantic success / error states */
+.status-pill.success{
+  background:var(--success-soft)!important;
+  color:var(--success)!important;
+  border:1px solid var(--success-border)!important;
+}
+.status-pill.danger{
+  background:var(--danger-soft)!important;
+  color:var(--danger)!important;
+  border:1px solid var(--danger-border)!important;
+}
+.status-pill.warning{
+  background:var(--warning-soft)!important;
+  color:var(--warning)!important;
+  border:1px solid var(--warning-border)!important;
+}
+.status-pill.neutral{
+  background:color-mix(in srgb,var(--brand-navy) 7%,var(--brand-white))!important;
+  color:color-mix(in srgb,var(--brand-navy) 72%,var(--brand-white))!important;
+  border:1px solid color-mix(in srgb,var(--brand-navy) 14%,var(--brand-white))!important;
+}
+
+/* form + page feedback */
+.form-error,.inline-error,.page-error{
+  color:var(--danger)!important;
+}
+.form-error,.inline-error{
+  background:var(--danger-soft)!important;
+  border-color:var(--danger-border)!important;
+}
+.success-banner{
+  background:var(--success-soft)!important;
+  color:var(--success)!important;
+  border-color:var(--success-border)!important;
+}
+.toast-success{border-color:var(--success-border)!important}
+.toast-success .app-toast__icon{
+  background:var(--success-soft)!important;
+  color:var(--success)!important;
+}
+.toast-error{border-color:var(--danger-border)!important}
+.toast-error .app-toast__icon{
+  background:var(--danger-soft)!important;
+  color:var(--danger)!important;
+}
+
+/* delete / destructive actions */
+.icon-btn.danger,
+.btn-danger-soft{
+  background:var(--danger-soft)!important;
+  color:var(--danger)!important;
+  border-color:var(--danger-border)!important;
+}
+.icon-btn.danger:hover,
+.btn-danger-soft:hover{
+  background:#FFE2E2!important;
+  color:#B82F2F!important;
+  border-color:#E59B9B!important;
+}
+.btn-danger-solid{
+  background:var(--danger)!important;
+  color:var(--brand-white)!important;
+  box-shadow:0 8px 18px rgba(214,69,69,.20)!important;
+}
+.confirm-icon.tone-danger{
+  background:var(--danger-soft)!important;
+  color:var(--danger)!important;
+}
+
+/* reviewed / completed / successful save */
+.submission-review-card.is-ready{
+  border-color:var(--success-border)!important;
+  box-shadow:0 8px 24px rgba(31,138,91,.10)!important;
+}
+.save-operation-btn.is-success{
+  background:var(--success)!important;
+  color:var(--brand-white)!important;
+  border-color:var(--success)!important;
+  box-shadow:0 9px 22px rgba(31,138,91,.22)!important;
+}
+.operation-note-editor small.saved{color:var(--success)!important}
+.operation-note-editor small.error{color:var(--danger)!important}
+
+/* audit semantics */
+.audit-action-badge.action-delete{
+  background:var(--danger-soft)!important;
+  color:var(--danger)!important;
+}
+.audit-action-badge.action-review_status{
+  background:var(--success-soft)!important;
+  color:var(--success)!important;
+}
+
+/* dashboard KPI direction indicators */
+.management-delta.up{
+  background:var(--success-soft)!important;
+  color:var(--success)!important;
+}
+.management-delta.down{
+  background:var(--danger-soft)!important;
+  color:var(--danger)!important;
+}
+.management-delta.neutral{
+  background:color-mix(in srgb,var(--brand-navy) 7%,var(--brand-white))!important;
+  color:var(--brand-navy)!important;
+}
+
+/* dashboard alerts */
+.management-alert.alert-danger{
+  border-color:var(--danger-border)!important;
+  background:var(--danger-soft)!important;
+}
+.management-alert.alert-danger>strong{
+  background:color-mix(in srgb,var(--danger) 12%,var(--brand-white))!important;
+  color:var(--danger)!important;
+}
+.management-alert.alert-warning{
+  border-color:var(--warning-border)!important;
+  background:var(--warning-soft)!important;
+}
+.management-alert.alert-warning>strong{
+  background:color-mix(in srgb,var(--warning) 12%,var(--brand-white))!important;
+  color:var(--warning)!important;
+}
+.management-all-clear{
+  color:var(--success)!important;
+}
+
+/* successful executive KPI keeps positive meaning */
+.executive-kpi.success{
+  border-color:var(--success-border)!important;
+  background:linear-gradient(180deg,var(--brand-white),var(--success-soft))!important;
+}
+
+/* dashboard hero readability */
+.dashboard-hero,
+.management-dashboard-hero{
+  background:linear-gradient(
+    135deg,
+    var(--brand-navy) 0%,
+    color-mix(in srgb,var(--brand-navy) 88%,var(--brand-gold)) 100%
+  )!important;
+  color:var(--brand-white)!important;
+  border:1px solid color-mix(in srgb,var(--brand-navy) 85%,var(--brand-white))!important;
+}
+.dashboard-hero h1,
+.dashboard-hero h2,
+.dashboard-hero h3,
+.management-dashboard-hero h1,
+.management-dashboard-hero h2,
+.management-dashboard-hero h3{
+  color:var(--brand-white)!important;
+}
+.dashboard-hero p,
+.dashboard-hero small,
+.management-dashboard-hero p,
+.management-dashboard-hero small{
+  color:rgba(255,255,255,.82)!important;
+}
+.dashboard-hero .eyebrow,
+.management-dashboard-hero .eyebrow{
+  color:var(--brand-gold)!important;
+}
+.dashboard-hero .hero-strip__mark,
+.management-dashboard-hero .hero-strip__mark{
+  color:var(--brand-gold)!important;
+  background:rgba(255,255,255,.08)!important;
+  border-color:rgba(255,255,255,.14)!important;
+}
+
+/* active/valid indicators that represent a good state */
+.availability-dot.active{color:var(--success)!important}
+.availability-dot.active::before{background:var(--success)!important}
+.person-attendance-row .present{
+  background:var(--success-soft)!important;
+  border-color:var(--success-border)!important;
+}
+.person-attendance-row .present strong{color:var(--success)!important}
+.person-attendance-row .absent{
+  background:var(--danger-soft)!important;
+  border-color:var(--danger-border)!important;
+}
+.person-attendance-row .absent strong{color:var(--danger)!important}
