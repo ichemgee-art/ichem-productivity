@@ -15,8 +15,8 @@ import { money, monthName, number, roleLabels } from '../lib/format'
 
 const chartTooltipStyle = {
   borderRadius: 12,
-  border: '1px solid #e2e8f0',
-  boxShadow: '0 10px 30px rgba(8,26,49,.12)',
+  border: '1px solid rgba(37,58,85,.16)',
+  boxShadow: '0 10px 30px rgba(37,58,85,.12)',
   fontFamily: 'Cairo',
   fontSize: 12,
 }
@@ -320,7 +320,7 @@ export default function DashboardPage() {
           <div className="chart-wrap chart-wrap-large">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={view.dayComparison} margin={{ top: 18, right: 15, left: 8, bottom: 10 }}>
-                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e8edf4" />
+                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="rgba(37,58,85,.12)" />
                 <XAxis dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => `${number(value)} م`} />
@@ -359,7 +359,7 @@ export default function DashboardPage() {
             {projectChartData.length ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={projectChartData} margin={{ top: 12, right: 8, left: 4, bottom: 50 }}>
-                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e8edf4" />
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="rgba(37,58,85,.12)" />
                   <XAxis dataKey="name" angle={-18} textAnchor="end" height={72} tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => `${number(value)} م`} />
