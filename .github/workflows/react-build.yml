@@ -31,5 +31,8 @@ jobs:
       - name: Audit high severity dependencies
         run: npm audit --audit-level=high
 
+      - name: Logic tests
+        run: npm test
+
       - name: Production build
         run: npm run build
