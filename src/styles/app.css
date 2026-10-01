@@ -1837,3 +1837,118 @@ textarea:focus-visible{
   .data-table-wrap{overflow:visible!important}
   .executive-report-footer{padding:8px 0!important}
 }
+
+
+/* Full executive PDF table pagination */
+.report-full-operations{
+  margin-top:2px;
+}
+.report-operations-table{
+  min-width:1180px;
+  table-layout:fixed;
+}
+.report-operations-table th,
+.report-operations-table td{
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  vertical-align:middle;
+}
+
+@media print{
+  @page{
+    size:A3 landscape;
+    margin:7mm;
+  }
+
+  .executive-report-page{
+    width:100%!important;
+    max-width:none!important;
+  }
+
+  .executive-report-cover{
+    min-height:78px!important;
+    padding:14px 18px!important;
+  }
+
+  .executive-report-cover h1{
+    font-size:20px!important;
+  }
+
+  .report-kpi-grid{
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:7px!important;
+    padding:9px 0!important;
+  }
+
+  .report-kpi-grid>div{
+    min-height:58px!important;
+    padding:9px!important;
+  }
+
+  .report-two-column{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+
+  .report-full-operations{
+    break-before:page!important;
+    page-break-before:always!important;
+    margin-top:0!important;
+  }
+
+  .report-full-operations>header{
+    break-inside:avoid!important;
+    page-break-inside:avoid!important;
+  }
+
+  .report-full-operations .data-table-wrap{
+    width:100%!important;
+    overflow:visible!important;
+  }
+
+  .report-operations-table{
+    width:100%!important;
+    min-width:0!important;
+    table-layout:fixed!important;
+    border-collapse:collapse!important;
+    font-size:6.2px!important;
+  }
+
+  .report-operations-table thead{
+    display:table-header-group!important;
+  }
+
+  .report-operations-table tbody{
+    display:table-row-group!important;
+  }
+
+  .report-operations-table tr{
+    break-inside:avoid!important;
+    page-break-inside:avoid!important;
+  }
+
+  .report-operations-table th{
+    padding:4px 2.5px!important;
+    background:var(--brand-navy)!important;
+    color:var(--brand-white)!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+
+  .report-operations-table td{
+    padding:3.5px 2.5px!important;
+    line-height:1.4!important;
+  }
+
+  .report-operations-table tbody tr:nth-child(even) td{
+    background:#F7F8FA!important;
+    -webkit-print-color-adjust:exact!important;
+    print-color-adjust:exact!important;
+  }
+
+  .executive-report-footer{
+    break-inside:avoid!important;
+    page-break-inside:avoid!important;
+  }
+}
