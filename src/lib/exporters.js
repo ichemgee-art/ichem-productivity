@@ -63,7 +63,6 @@ export async function exportTablePdf({ filename, sheets }) {
   const printableSheets = (sheets || []).filter((sheet) => Array.isArray(sheet?.rows))
   if (!printableSheets.length) throw new Error('لا توجد بيانات جدول جاهزة للتصدير')
 
-  // Open synchronously from the user click so the browser does not treat it as a blocked popup.
   const printWindow = window.open('', '_blank')
   if (!printWindow) {
     throw new Error('المتصفح منع نافذة الطباعة. اسمح بالنوافذ المنبثقة ثم جرّب مرة أخرى.')
@@ -74,8 +73,9 @@ export async function exportTablePdf({ filename, sheets }) {
     return Math.max(max, count)
   }, 0)
 
-  const pageSize = maxColumns >= 11 ? 'A3 landscape' : 'A4 landscape'
-  const fontSize = maxColumns >= 13 ? 7.2 : maxColumns >= 10 ? 8 : 9
+  const pageSize = maxColumns >= 9 ? 'A3 landscape' : 'A4 landscape'
+  const fontSize = maxColumns >= 14 ? 6.3 : maxColumns >= 11 ? 7 : maxColumns >= 8 ? 7.8 : 8.8
+  const cellPadding = maxColumns >= 12 ? '3.3px 2.5px' : '4px 3px'
   const generatedAt = new Date().toLocaleString('ar-EG', {
     year: 'numeric',
     month: '2-digit',
@@ -84,36 +84,69 @@ export async function exportTablePdf({ filename, sheets }) {
     minute: '2-digit',
   })
 
+  const totalRows = printableSheets.reduce((sum, sheet) => sum + (sheet.rows?.length || 0), 0)
+  const reportTitle = printableSheets.length === 1
+    ? (printableSheets[0].name || safeName(filename))
+    : safeName(filename)
+
   const sections = printableSheets.map((sheet, sheetIndex) => {
     const rows = sheet.rows || []
     const keys = Object.keys(rows[0] || {})
     const table = keys.length
       ? `
-        <table>
-          <thead>
-            <tr>${keys.map((key) => `<th>${escapeHtml(key)}</th>`).join('')}</tr>
-          </thead>
-          <tbody>
-            ${rows.map((row) => `
-              <tr>${keys.map((key) => `<td>${escapeHtml(displayValue(row[key]))}</td>`).join('')}</tr>
-            `).join('')}
-          </tbody>
-        </table>
+        <div class="table-shell">
+          <table>
+            <thead>
+              <tr>${keys.map((key) => `<th>${escapeHtml(key)}</th>`).join('')}</tr>
+            </thead>
+            <tbody>
+              ${rows.map((row, rowIndex) => `
+                <tr>
+                  ${keys.map((key) => `<td>${escapeHtml(displayValue(row[key]))}</td>`).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
       `
       : '<div class="empty">لا توجد بيانات</div>'
 
     return `
       <section class="sheet ${sheetIndex > 0 ? 'new-page' : ''}">
-        <div class="sheet-head">
+        <header class="executive-header">
+          <div class="executive-header__copy">
+            <span class="eyebrow">STC · ENGINEERING OPERATIONS REPORT</span>
+            <h1>${escapeHtml(sheet.name || reportTitle)}</h1>
+            <p>تقرير تشغيلي كامل — جميع الصفوف والأعمدة مدرجة داخل المستند.</p>
+          </div>
+          <div class="executive-mark">
+            <span class="mark-bars"><i></i><i></i><i></i></span>
+          </div>
+        </header>
+
+        <section class="report-meta-grid">
+          <article>
+            <span>عدد السجلات</span>
+            <strong>${rows.length.toLocaleString('en-US')}</strong>
+          </article>
+          <article>
+            <span>عدد الأعمدة</span>
+            <strong>${keys.length.toLocaleString('en-US')}</strong>
+          </article>
+          <article>
+            <span>تاريخ التصدير</span>
+            <strong class="meta-date">${escapeHtml(generatedAt)}</strong>
+          </article>
+        </section>
+
+        <div class="section-title">
           <div>
-            <span class="kicker">ENGINEERING OPERATIONS REPORT</span>
-            <h2>${escapeHtml(sheet.name || 'تقرير')}</h2>
+            <span>FULL DATA TABLE</span>
+            <h2>${escapeHtml(sheet.name || 'البيانات')}</h2>
           </div>
-          <div class="sheet-meta">
-            <strong>${rows.length.toLocaleString('ar-EG')} سجل</strong>
-            <span>تاريخ التصدير: ${escapeHtml(generatedAt)}</span>
-          </div>
+          <small>${rows.length.toLocaleString('ar-EG')} سجل</small>
         </div>
+
         ${table}
       </section>
     `
@@ -129,7 +162,7 @@ export async function exportTablePdf({ filename, sheets }) {
   <style>
     @page {
       size: ${pageSize};
-      margin: 8mm;
+      margin: 8mm 7mm 10mm;
     }
 
     * { box-sizing: border-box; }
@@ -144,84 +177,171 @@ export async function exportTablePdf({ filename, sheets }) {
       print-color-adjust: exact !important;
     }
 
-    body { direction: rtl; }
+    body {
+      direction: rtl;
+      font-variant-numeric: tabular-nums;
+    }
 
-    .report-cover {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 10px 12px;
-      margin-bottom: 8px;
-      border: 1px solid #D8DEE6;
-      border-right: 5px solid #F3B820;
+    .print-root {
+      width: 100%;
       background: #FFFFFF;
     }
 
-    .report-cover h1 {
+    .sheet {
+      width: 100%;
+    }
+
+    .new-page {
+      break-before: page;
+      page-break-before: always;
+    }
+
+    .executive-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      min-height: 78px;
+      margin-bottom: 8px;
+      padding: 14px 18px;
+      border-radius: 8px;
+      background: #253A55 !important;
+      color: #FFFFFF !important;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .executive-header__copy {
+      display: grid;
+      gap: 3px;
+    }
+
+    .executive-header .eyebrow {
+      color: #F3B820 !important;
+      font-size: 6.8px;
+      font-weight: 800;
+      letter-spacing: .8px;
+    }
+
+    .executive-header h1 {
       margin: 0;
-      color: #253A55;
+      color: #FFFFFF !important;
       font-size: 17px;
+      line-height: 1.45;
+    }
+
+    .executive-header p {
+      margin: 0;
+      color: rgba(255,255,255,.76) !important;
+      font-size: 7px;
+    }
+
+    .executive-mark {
+      width: 48px;
+      height: 48px;
+      flex: 0 0 48px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 12px;
+      background: rgba(255,255,255,.07);
+    }
+
+    .mark-bars {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: end;
+      justify-content: center;
+      gap: 3px;
+      padding-bottom: 3px;
+      border-bottom: 2px solid #F3B820;
+    }
+
+    .mark-bars i {
+      width: 4px;
+      display: block;
+      border-radius: 2px 2px 0 0;
+      background: #F3B820;
+    }
+    .mark-bars i:nth-child(1){height:9px}
+    .mark-bars i:nth-child(2){height:16px}
+    .mark-bars i:nth-child(3){height:12px}
+
+    .report-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 7px;
+      margin-bottom: 8px;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .report-meta-grid article {
+      display: grid;
+      gap: 2px;
+      min-height: 44px;
+      padding: 8px 10px;
+      border: 1px solid #D8DEE6;
+      border-radius: 7px;
+      background: #FFFFFF;
+    }
+
+    .report-meta-grid span {
+      color: #7B8797;
+      font-size: 6.5px;
+    }
+
+    .report-meta-grid strong {
+      color: #253A55;
+      font-size: 12px;
+    }
+
+    .report-meta-grid .meta-date {
+      font-size: 8px;
       line-height: 1.5;
     }
 
-    .report-cover p {
-      margin: 3px 0 0;
-      color: #66758A;
-      font-size: 8px;
-    }
-
-    .brand-mark {
-      flex: 0 0 auto;
-      padding: 7px 10px;
-      border-radius: 6px;
-      background: #253A55;
-      color: #FFFFFF;
-      font-size: 8px;
-      font-weight: 700;
-      letter-spacing: .4px;
-    }
-
-    .sheet { width: 100%; }
-    .new-page { break-before: page; page-break-before: always; }
-
-    .sheet-head {
+    .section-title {
       display: flex;
-      align-items: flex-end;
+      align-items: end;
       justify-content: space-between;
-      gap: 14px;
-      margin: 0 0 7px;
-      padding: 0 1px 6px;
+      gap: 10px;
+      margin: 0 0 5px;
+      padding: 0 2px 5px;
       border-bottom: 2px solid #253A55;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
 
-    .kicker {
-      display: block;
-      margin-bottom: 2px;
-      color: #B07E00;
-      font-size: 6.5px;
-      font-weight: 700;
-      letter-spacing: .7px;
-    }
-
-    .sheet-head h2 {
-      margin: 0;
-      font-size: 13px;
-      color: #253A55;
-    }
-
-    .sheet-meta {
+    .section-title > div {
       display: grid;
-      gap: 2px;
-      text-align: left;
-      color: #66758A;
-      font-size: 6.7px;
-      direction: rtl;
+      gap: 1px;
     }
 
-    .sheet-meta strong {
+    .section-title span {
+      color: #B07E00;
+      font-size: 5.8px;
+      font-weight: 800;
+      letter-spacing: .6px;
+    }
+
+    .section-title h2 {
+      margin: 0;
       color: #253A55;
-      font-size: 7.5px;
+      font-size: 11px;
+    }
+
+    .section-title small {
+      color: #66758A;
+      font-size: 6.5px;
+    }
+
+    .table-shell {
+      width: 100%;
+      overflow: visible;
+      border: 1px solid #D8DEE6;
+      border-radius: 6px;
     }
 
     table {
@@ -232,7 +352,13 @@ export async function exportTablePdf({ filename, sheets }) {
       font-size: ${fontSize}px;
     }
 
-    thead { display: table-header-group; }
+    thead {
+      display: table-header-group;
+    }
+
+    tbody {
+      display: table-row-group;
+    }
 
     tr {
       break-inside: avoid;
@@ -240,27 +366,28 @@ export async function exportTablePdf({ filename, sheets }) {
     }
 
     th {
-      padding: 5px 4px;
+      padding: ${cellPadding};
+      border: 1px solid #253A55;
       background: #253A55 !important;
       color: #FFFFFF !important;
-      border: 1px solid #253A55;
-      font-weight: 700;
-      line-height: 1.35;
+      font-weight: 800;
+      line-height: 1.4;
       text-align: center;
       vertical-align: middle;
-      word-break: break-word;
+      word-break: normal;
       overflow-wrap: anywhere;
+      white-space: normal;
     }
 
     td {
-      padding: 4px 4px;
+      padding: ${cellPadding};
       border: 1px solid #D8DEE6;
-      color: #253A55;
-      background: #FFFFFF;
+      background: #FFFFFF !important;
+      color: #253A55 !important;
       line-height: 1.45;
       text-align: center;
       vertical-align: middle;
-      word-break: break-word;
+      word-break: normal;
       overflow-wrap: anywhere;
       white-space: normal;
     }
@@ -270,17 +397,20 @@ export async function exportTablePdf({ filename, sheets }) {
     }
 
     .empty {
-      padding: 30px;
+      padding: 28px;
       border: 1px dashed #B8C1CD;
+      border-radius: 7px;
       text-align: center;
       color: #66758A;
-      font-size: 11px;
+      font-size: 10px;
     }
 
-    .print-note {
-      margin-top: 7px;
+    .document-footer {
+      margin-top: 6px;
+      padding-top: 5px;
+      border-top: 1px solid #D8DEE6;
       color: #7B8797;
-      font-size: 6.5px;
+      font-size: 5.8px;
       text-align: center;
     }
 
@@ -291,31 +421,61 @@ export async function exportTablePdf({ filename, sheets }) {
         padding: 18px;
         background: #EEF1F4;
       }
+
       .print-root {
         padding: 14px;
-        background: #FFFFFF;
+        border-radius: 12px;
         box-shadow: 0 8px 30px rgba(37,58,85,.14);
       }
     }
 
     @media print {
-      body { background: #FFFFFF; }
-      .print-root { padding: 0; }
-      .report-cover { break-inside: avoid; page-break-inside: avoid; }
+      html, body, .print-root {
+        width: 100% !important;
+        max-width: none !important;
+      }
+
+      body {
+        background: #FFFFFF !important;
+      }
+
+      .print-root {
+        padding: 0 !important;
+      }
+
+      .executive-header,
+      .report-meta-grid,
+      .section-title {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      table {
+        width: 100% !important;
+      }
+
+      thead {
+        display: table-header-group !important;
+      }
+
+      tr, td, th {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+
+      .new-page {
+        break-before: page !important;
+        page-break-before: always !important;
+      }
     }
   </style>
 </head>
 <body>
   <main class="print-root">
-    <header class="report-cover">
-      <div>
-        <h1>${escapeHtml(title)}</h1>
-        <p>تقرير مُهيأ للطباعة بجودة عالية — كل الصفوف والأعمدة مدرجة داخل المستند.</p>
-      </div>
-      <div class="brand-mark">STC · PRODUCTIVITY SYSTEM</div>
-    </header>
     ${sections}
-    <div class="print-note">استخدم Save as PDF من نافذة الطباعة للحفاظ على أعلى جودة للنص والجداول.</div>
+    <footer class="document-footer">
+      STC Productivity System · ${totalRows.toLocaleString('ar-EG')} سجل إجمالي · ${escapeHtml(generatedAt)}
+    </footer>
   </main>
 
   <script>
@@ -328,7 +488,7 @@ export async function exportTablePdf({ filename, sheets }) {
         window.print();
       };
 
-      window.addEventListener('load', () => setTimeout(runPrint, 120));
+      window.addEventListener('load', () => setTimeout(runPrint, 150));
       window.addEventListener('afterprint', () => setTimeout(() => window.close(), 200));
     })();
   <\/script>
