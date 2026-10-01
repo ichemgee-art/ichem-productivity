@@ -42,7 +42,7 @@ export default function AppLayout() {
       const role = location.pathname.split('/').pop()
       return [peopleLabels[role] || 'الأفراد', 'الإنتاجية والحضور ومستحقات كل شخص في الدورة.']
     }
-    return pageTitles[location.pathname] || ['iChem Productivity', 'Engineering Operations System']
+    return pageTitles[location.pathname] || ['STC Productivity', 'Engineering Operations System']
   }, [location.pathname])
 
   const setAsActive = async () => {
@@ -88,8 +88,8 @@ export default function AppLayout() {
   const sidebar = (
     <>
       <div className="sidebar-brand">
-        <span className="brand-tile">iC</span>
-        <div><strong>iChem</strong><small>Productivity System</small></div>
+        <span className="brand-tile">STC</span>
+        <div><strong>STC</strong><small>Productivity System</small></div>
       </div>
       <div className="sidebar-section-label">OPERATIONS</div>
       <nav className="sidebar-nav">
