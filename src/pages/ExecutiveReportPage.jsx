@@ -4,7 +4,7 @@ import { BarChart3, CalendarCheck2, CircleDollarSign, FileSpreadsheet, Printer, 
 import { useCycle } from '../context/CycleContext'
 import { appService } from '../services/appService'
 import { exportExcel } from '../lib/exporters'
-import { money, monthName, number, roleLabels } from '../lib/format'
+import { date, money, monthName, number, roleLabels } from '../lib/format'
 
 const summarizeRows = (rows) => {
   const meters = rows.reduce((sum, row) => sum + Number(row.meters || 0), 0)
@@ -120,6 +120,7 @@ export default function ExecutiveReportPage() {
       sections: groupBy(query.data.currentRows, 'section'),
       people: aggregatePeople(query.data.currentOps),
       previousKey: query.data.previousKey,
+      currentRows: query.data.currentRows,
     }
   }, [query.data])
 
@@ -166,6 +167,23 @@ export default function ExecutiveReportPage() {
         'العمليات': row.operationsCount,
         'الأمتار': row.meters,
         'المستحقات': row.earnings,
+      })),
+    },
+    {
+      name: 'العمليات كاملة',
+      rows: report.currentRows.map((row, index) => ({
+        '#': index + 1,
+        'التاريخ': date(row.work_date),
+        'المشروع': row.project || '—',
+        'القطاع': row.section || '—',
+        'المهندسين': row.engineers || '—',
+        'الفنيين': row.technicians || '—',
+        'المساعدين': row.assistants || '—',
+        'العمال': row.workers || '—',
+        'الأمتار': Number(row.meters || 0),
+        'سعر المتر': Number(row.price_per_meter || 0),
+        'الإجمالي': Number(row.total || 0),
+        'المراجعة': row.review_status === 'reviewed' ? 'تمت المراجعة' : 'لم تتم',
       })),
     },
   ]
@@ -262,6 +280,41 @@ export default function ExecutiveReportPage() {
                   <tr key={`${row.name}-${row.role}`}>
                     <td>{index + 1}</td><td>{row.name}</td><td>{roleLabels[row.role] || row.role}</td>
                     <td>{number(row.operationsCount)}</td><td>{number(row.meters)}</td><td>{money(row.earnings)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="report-section report-full-operations">
+          <header>
+            <div><span>FULL OPERATIONS TABLE</span><h2>جميع عمليات الدورة</h2></div>
+            <small>{number(report.currentRows.length)} عملية</small>
+          </header>
+          <div className="data-table-wrap">
+            <table className="data-table report-table report-operations-table">
+              <thead>
+                <tr>
+                  <th>#</th><th>التاريخ</th><th>المشروع</th><th>القطاع</th><th>المهندسين</th><th>الفنيين</th>
+                  <th>المساعدين</th><th>العمال</th><th>الأمتار</th><th>سعر المتر</th><th>الإجمالي</th><th>المراجعة</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.currentRows.map((row, index) => (
+                  <tr key={row.id || `${row.work_date}-${row.project}-${index}`}>
+                    <td>{index + 1}</td>
+                    <td>{date(row.work_date)}</td>
+                    <td>{row.project || '—'}</td>
+                    <td>{row.section || '—'}</td>
+                    <td>{row.engineers || '—'}</td>
+                    <td>{row.technicians || '—'}</td>
+                    <td>{row.assistants || '—'}</td>
+                    <td>{row.workers || '—'}</td>
+                    <td>{number(row.meters)}</td>
+                    <td>{money(row.price_per_meter)}</td>
+                    <td>{money(row.total)}</td>
+                    <td>{row.review_status === 'reviewed' ? 'تمت المراجعة' : 'لم تتم'}</td>
                   </tr>
                 ))}
               </tbody>
