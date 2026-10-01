@@ -260,4 +260,8 @@ export const appService = {
   async deleteSection(id) {
     return unwrap(await supabase.rpc('admin_delete_section', { p_id: id }))
   },
+
+  async askAI(payload) {
+    return unwrap(await supabase.functions.invoke('operations-ai', { body: payload }))
+  },
 }
