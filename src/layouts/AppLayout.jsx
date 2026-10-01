@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   BarChart3, ClipboardPlus, Database, FolderKanban, Gauge, LogOut, Menu,
-  Settings2, ShieldCheck, UserRoundCog, Users, X, CalendarDays, Wrench, ArrowLeftRight, History,
+  Settings2, ShieldCheck, UserRoundCog, Users, X, CalendarDays, Wrench, ArrowLeftRight, History, RefreshCw,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useCycle } from '../context/CycleContext'
@@ -31,6 +31,7 @@ export default function AppLayout() {
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [settingActive, setSettingActive] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   const meta = useMemo(() => {
     if (location.pathname.startsWith('/people/')) {
@@ -49,6 +50,18 @@ export default function AppLayout() {
       await queryClient.invalidateQueries()
     } finally {
       setSettingActive(false)
+    }
+  }
+
+  const refreshSystem = async () => {
+    if (refreshing) return
+    setRefreshing(true)
+    try {
+      await refreshCycles()
+      await queryClient.invalidateQueries()
+      await queryClient.refetchQueries({ type: 'active' })
+    } finally {
+      setRefreshing(false)
     }
   }
 
@@ -110,6 +123,16 @@ export default function AppLayout() {
               {selectedCycle ? <span className="cycle-dates">{date(selectedCycle.cycle_start)} → {date(selectedCycle.cycle_end)}</span> : null}
               {selectedCycle?.is_active ? <span className="status-pill success">الحالية</span> : permissions.canSetActiveCycle ? <button className="btn btn-ghost btn-sm" disabled={settingActive} onClick={setAsActive}>{settingActive ? '...' : 'اعتماد'}</button> : null}
             </div>
+            <button
+              className={`icon-btn system-refresh-btn ${refreshing ? 'is-refreshing' : ''}`}
+              type="button"
+              onClick={refreshSystem}
+              disabled={refreshing}
+              title={refreshing ? 'جاري تحديث البيانات' : 'تحديث بيانات النظام'}
+              aria-label={refreshing ? 'جاري تحديث البيانات' : 'تحديث بيانات النظام'}
+            >
+              <RefreshCw size={18} />
+            </button>
             <div className="user-chip">
               <div className="user-avatar">{(profile?.display_name || user?.email || 'U').slice(0, 1).toUpperCase()}</div>
               <div><strong>{profile?.display_name || 'مستخدم'}</strong><small>{user?.email}</small></div>
