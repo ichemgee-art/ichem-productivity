@@ -11,7 +11,8 @@ import {
 import { useCycle } from '../context/CycleContext'
 import { appService } from '../services/appService'
 import EmptyState from '../components/EmptyState'
-import { money, monthName, number, roleLabels } from '../lib/format'
+import { date, money, monthName, number, roleLabels } from '../lib/format'
+import ExportButtons from '../components/ExportButtons'
 
 const chartTooltipStyle = {
   borderRadius: 12,
@@ -268,6 +269,61 @@ export default function DashboardPage() {
   const projectChartData = view.projects.slice(0, 8)
   const topPeople = view.people.slice(0, 8)
 
+  const dashboardExportSheets = [
+    {
+      name: 'ملخص الدورة',
+      rows: [{
+        'الدورة': monthName(monthKey),
+        'حتى تاريخ': date(view.currentCutoff),
+        'عدد الأيام المقارنة': view.elapsedDays,
+        'العمليات': Number(view.currentSummary.tasks || 0),
+        'إجمالي الأمتار': Number(view.currentSummary.meters || 0),
+        'قيمة الإنتاجية': Number(view.currentSummary.revenue || 0),
+        'متوسط سعر المتر': Number(view.currentSummary.avgPrice || 0),
+        'مستحقات فريق التنفيذ': Number(view.currentLabor || 0),
+        'نسبة الحضور %': Number(view.currentAtt.rate || 0),
+        'الحضور': Number(view.currentAtt.present || 0),
+        'الغياب': Number(view.currentAtt.absent || 0),
+      }],
+    },
+    {
+      name: 'عمليات الدورة',
+      rows: (query.data?.currentRows || []).map((row) => ({
+        'التاريخ': date(row.work_date),
+        'المشروع': row.project || '—',
+        'القطاع': row.section || '—',
+        'المهندسين': row.engineers || '—',
+        'الفنيين': row.technicians || '—',
+        'المساعدين': row.assistants || '—',
+        'العمال': row.workers || '—',
+        'الأمتار': Number(row.meters || 0),
+        'سعر المتر': Number(row.price_per_meter || 0),
+        'الإجمالي': Number(row.total || 0),
+        'حالة المراجعة': row.review_status === 'reviewed' ? 'تمت المراجعة' : 'لم تتم',
+        'الملاحظات': row.note || '',
+      })),
+    },
+    {
+      name: 'ملخص المشاريع',
+      rows: view.projects.map((row) => ({
+        'المشروع': row.name || '—',
+        'عدد العمليات': Number(row.tasks || 0),
+        'الأمتار': Number(row.meters || 0),
+        'قيمة الإنتاجية': Number(row.revenue || 0),
+      })),
+    },
+    {
+      name: 'أداء الأفراد',
+      rows: view.people.map((row) => ({
+        'الاسم': row.person_name || '—',
+        'الدور': roleLabels[row.role] || row.role || '—',
+        'عدد العمليات': Number(row.tasks || 0),
+        'الأمتار': Number(row.meters || 0),
+        'المستحقات': Number(row.earnings || 0),
+      })),
+    },
+  ]
+
   return (
     <div className="page-stack management-dashboard">
       <section className="hero-strip dashboard-hero management-dashboard-hero">
@@ -277,6 +333,17 @@ export default function DashboardPage() {
           <p>مقارنة حتى اليوم {view.elapsedDays} من الدورة مع نفس عدد الأيام من {monthName(view.previousKey)} — عشان المقارنة ما تتظلمش بسبب دورة غير مكتملة.</p>
         </div>
         <div className="hero-strip__mark"><Gauge size={34} /></div>
+      </section>
+
+      <section className="dashboard-export-toolbar">
+        <div className="dashboard-export-toolbar__copy">
+          <strong>تصدير لوحة الإنتاجية</strong>
+          <span>ملخص الدورة والعمليات والمشاريع وأداء الأفراد</span>
+        </div>
+        <ExportButtons
+          filename={`dashboard-${monthKey}`}
+          excelSheets={dashboardExportSheets}
+        />
       </section>
 
       <section className="executive-kpi-grid">
