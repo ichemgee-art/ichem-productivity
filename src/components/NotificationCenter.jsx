@@ -1,0 +1,142 @@
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { AlertTriangle, Bell, CheckCircle2, CircleAlert, ClipboardCheck, Users } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { useCycle } from '../context/CycleContext'
+import { appService } from '../services/appService'
+
+export default function NotificationCenter() {
+  const { monthKey, selectedCycle } = useCycle()
+  const [open, setOpen] = useState(false)
+
+  const rowsQuery = useQuery({
+    queryKey: ['cycle-data', 'notification-rows', monthKey],
+    queryFn: () => appService.productivityRows(selectedCycle.cycle_start, selectedCycle.cycle_end),
+    enabled: Boolean(selectedCycle),
+  })
+
+  const attendanceQuery = useQuery({
+    queryKey: ['cycle-data', 'notification-attendance', monthKey],
+    queryFn: () => appService.attendance(monthKey),
+    enabled: Boolean(monthKey),
+  })
+
+  const items = useMemo(() => {
+    const rows = rowsQuery.data || []
+    const attendance = attendanceQuery.data || []
+    const notifications = []
+
+    const unreviewed = rows.filter((row) => row.review_status !== 'reviewed')
+    if (unreviewed.length) {
+      notifications.push({
+        id: 'unreviewed',
+        tone: 'warning',
+        icon: ClipboardCheck,
+        title: 'عمليات تحتاج مراجعة',
+        text: `${unreviewed.length} عملية لم يتم اعتماد مراجعتها بعد.`,
+        to: '/productivity?review=not_reviewed',
+      })
+    }
+
+    const zeroPrice = rows.filter((row) => Number(row.meters || 0) > 0 && Number(row.price_per_meter || 0) === 0)
+    if (zeroPrice.length) {
+      notifications.push({
+        id: 'zero-price',
+        tone: 'danger',
+        icon: CircleAlert,
+        title: 'أمتار بسعر صفر',
+        text: `${zeroPrice.length} عملية بها تنفيذ فعلي وسعر المتر يساوي صفر.`,
+        to: '/productivity',
+      })
+    }
+
+    const noTeam = rows.filter((row) => !row.engineers && !row.technicians && !row.assistants && !row.workers)
+    if (noTeam.length) {
+      notifications.push({
+        id: 'no-team',
+        tone: 'danger',
+        icon: Users,
+        title: 'عمليات بدون فريق',
+        text: `${noTeam.length} عملية مسجلة بدون فريق تنفيذ.`,
+        to: '/productivity',
+      })
+    }
+
+    const uncategorizedAbsence = attendance.filter((row) =>
+      row.status === 'absent' && !row.is_friday && !row.absence_type
+    )
+    if (uncategorizedAbsence.length) {
+      notifications.push({
+        id: 'absence',
+        tone: 'warning',
+        icon: AlertTriangle,
+        title: 'غياب يحتاج تصنيف',
+        text: `${uncategorizedAbsence.length} حالة غياب بدون تحديد نوع الغياب.`,
+        to: '/attendance',
+      })
+    }
+
+    if (!notifications.length && !rowsQuery.isLoading && !attendanceQuery.isLoading) {
+      notifications.push({
+        id: 'clear',
+        tone: 'success',
+        icon: CheckCircle2,
+        title: 'لا توجد تنبيهات حرجة',
+        text: 'البيانات الحالية لا تحتوي على حالات تشغيلية واضحة تحتاج تدخلًا.',
+        to: '/',
+        passive: true,
+      })
+    }
+
+    return notifications
+  }, [rowsQuery.data, attendanceQuery.data, rowsQuery.isLoading, attendanceQuery.isLoading])
+
+  const count = items.filter((item) => !item.passive).length
+
+  return (
+    <div className="notification-center">
+      <button
+        className={`icon-btn notification-trigger ${count ? 'has-alerts' : ''}`}
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        title="التنبيهات"
+        aria-label="التنبيهات"
+        aria-expanded={open}
+      >
+        <Bell size={18} />
+        {count ? <span className="notification-count">{count > 9 ? '9+' : count}</span> : null}
+      </button>
+
+      {open ? (
+        <>
+          <button className="floating-backdrop" type="button" aria-label="إغلاق التنبيهات" onClick={() => setOpen(false)} />
+          <section className="notification-popover">
+            <header>
+              <div>
+                <strong>مركز التنبيهات</strong>
+                <span>الدورة المعروضة حاليًا</span>
+              </div>
+              {count ? <b>{count}</b> : null}
+            </header>
+            <div className="notification-list">
+              {items.map((item) => {
+                const Icon = item.icon
+                return (
+                  <Link
+                    key={item.id}
+                    className={`notification-item tone-${item.tone}`}
+                    to={item.to}
+                    onClick={() => setOpen(false)}
+                  >
+                    <span className="notification-item__icon"><Icon size={17} /></span>
+                    <div><strong>{item.title}</strong><small>{item.text}</small></div>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
+        </>
+      ) : null}
+    </div>
+  )
+}
