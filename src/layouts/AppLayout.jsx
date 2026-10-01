@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   BarChart3, ClipboardPlus, Database, FolderKanban, Gauge, LogOut, Menu,
-  Settings2, ShieldCheck, UserRoundCog, Users, X, CalendarDays, Wrench, ArrowLeftRight, History, RefreshCw,
+  Settings2, ShieldCheck, UserRoundCog, Users, X, CalendarDays, Wrench, ArrowLeftRight, History, RefreshCw, FileText,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useCycle } from '../context/CycleContext'
@@ -10,6 +10,9 @@ import { date, monthName, roleLabels } from '../lib/format'
 import { appService } from '../services/appService'
 import { useQueryClient } from '@tanstack/react-query'
 import PageErrorBoundary from '../components/PageErrorBoundary'
+import GlobalSearch from '../components/GlobalSearch'
+import NotificationCenter from '../components/NotificationCenter'
+import AIAssistant from '../components/AIAssistant'
 
 const pageTitles = {
   '/': ['لوحة الإنتاجية', 'ملخص الدورة والفرق والمشاريع.'],
@@ -19,6 +22,7 @@ const pageTitles = {
   '/projects': ['المشاريع', 'قائمة المشاريع واستخدامها داخل التشغيل.'],
   '/sections': ['القطاعات والأسعار', 'القطاعات وأسعار المتر الحالية والتاريخ التشغيلي.'],
   '/comparison': ['مقارنة الشهور', 'مقارنة شاملة بين دورتين من حيث التشغيل والحضور والأداء.'],
+  '/report': ['التقرير التنفيذي', 'تقرير شهري للإدارة جاهز للطباعة والتصدير.'],
   '/audit': ['سجل التعديلات', 'كل التغييرات ومن نفذها مع إمكانية الاسترجاع الآمن.'],
 }
 
@@ -75,6 +79,7 @@ export default function AppLayout() {
     { to: '/people/worker', label: 'العمال', icon: Users },
     { to: '/attendance', label: 'الحضور والغياب', icon: CalendarDays },
     { to: '/comparison', label: 'مقارنة الشهور', icon: ArrowLeftRight },
+    { to: '/report', label: 'التقرير التنفيذي', icon: FileText },
     ...(permissions.canViewAudit ? [{ to: '/audit', label: 'سجل التعديلات', icon: History }] : []),
     { to: '/projects', label: 'المشاريع', icon: FolderKanban },
     { to: '/sections', label: 'القطاعات والأسعار', icon: Settings2 },
@@ -123,27 +128,32 @@ export default function AppLayout() {
               {selectedCycle ? <span className="cycle-dates">{date(selectedCycle.cycle_start)} → {date(selectedCycle.cycle_end)}</span> : null}
               {selectedCycle?.is_active ? <span className="status-pill success">الحالية</span> : permissions.canSetActiveCycle ? <button className="btn btn-ghost btn-sm" disabled={settingActive} onClick={setAsActive}>{settingActive ? '...' : 'اعتماد'}</button> : null}
             </div>
-            <button
-              className={`icon-btn system-refresh-btn ${refreshing ? 'is-refreshing' : ''}`}
-              type="button"
-              onClick={refreshSystem}
-              disabled={refreshing}
-              title={refreshing ? 'جاري تحديث البيانات' : 'تحديث بيانات النظام'}
-              aria-label={refreshing ? 'جاري تحديث البيانات' : 'تحديث بيانات النظام'}
-            >
-              <RefreshCw size={18} />
-            </button>
+            <div className="topbar-utility-actions">
+              <GlobalSearch />
+              <NotificationCenter />
+              <button
+                className={`icon-btn system-refresh-btn ${refreshing ? 'is-refreshing' : ''}`}
+                type="button"
+                onClick={refreshSystem}
+                disabled={refreshing}
+                title={refreshing ? 'جاري تحديث البيانات' : 'تحديث بيانات النظام'}
+                aria-label={refreshing ? 'جاري تحديث البيانات' : 'تحديث بيانات النظام'}
+              >
+                <RefreshCw size={18} />
+              </button>
+              <button className="icon-btn" onClick={signOut} title="تسجيل الخروج"><LogOut size={18} /></button>
+            </div>
             <div className="user-chip">
               <div className="user-avatar">{(profile?.display_name || user?.email || 'U').slice(0, 1).toUpperCase()}</div>
               <div><strong>{profile?.display_name || 'مستخدم'}</strong><small>{user?.email}</small></div>
             </div>
-            <button className="icon-btn" onClick={signOut} title="تسجيل الخروج"><LogOut size={18} /></button>
           </div>
         </header>
         <main className="page-content">
           {cyclesError ? <div className="page-error">{cyclesError.message || 'تعذر تحميل دورات النظام'}</div> : <PageErrorBoundary resetKey={location.pathname}><Outlet /></PageErrorBoundary>}
         </main>
       </div>
+      <AIAssistant />
     </div>
   )
 }
