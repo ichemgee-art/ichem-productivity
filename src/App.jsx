@@ -12,6 +12,7 @@ import ProjectsPage from './pages/ProjectsPage'
 import SectionsPage from './pages/SectionsPage'
 import ComparisonPage from './pages/ComparisonPage'
 import AuditPage from './pages/AuditPage'
+import ExecutiveReportPage from './pages/ExecutiveReportPage'
 
 function RequireAuth({ children }) {
   const { session, profile, loading, error, signOut } = useAuth()
@@ -61,6 +62,7 @@ export default function App() {
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="sections" element={<SectionsPage />} />
         <Route path="comparison" element={<ComparisonPage />} />
+        <Route path="report" element={<ExecutiveReportPage />} />
         <Route path="audit" element={<RequireAdmin><AuditPage /></RequireAdmin>} />
       </Route>
       <Route path="*" element={<Navigate to={session ? '/' : '/login'} replace />} />
