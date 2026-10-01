@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import { CheckCircle2, Pencil, Search, Trash2, XCircle } from 'lucide-react'
 import { useCycle } from '../context/CycleContext'
 import { useAuth } from '../context/AuthContext'
@@ -17,10 +18,13 @@ export default function ProductivityPage() {
   const { permissions } = useAuth()
   const queryClient = useQueryClient()
   const feedback = useFeedback()
-  const [queryText, setQueryText] = useState('')
+  const [searchParams] = useSearchParams()
+  const routeQuery = searchParams.get('q') || ''
+  const routeReview = searchParams.get('review') || ''
+  const [queryText, setQueryText] = useState(routeQuery)
   const [project, setProject] = useState('')
   const [section, setSection] = useState('')
-  const [review, setReview] = useState('')
+  const [review, setReview] = useState(routeReview)
   const [editing, setEditing] = useState(null)
   const [editInitial, setEditInitial] = useState(null)
   const [error, setError] = useState('')
@@ -34,6 +38,11 @@ export default function ProductivityPage() {
 
   const refsQuery = useQuery({ queryKey: ['references'], queryFn: appService.references })
   const rows = rowsQuery.data || []
+
+  useEffect(() => {
+    setQueryText(routeQuery)
+    setReview(routeReview)
+  }, [routeQuery, routeReview])
 
   const projects = useMemo(() => [...new Set(rows.map((row) => row.project).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ar')), [rows])
   const sections = useMemo(() => [...new Set(rows.map((row) => row.section).filter(Boolean))].sort(), [rows])
