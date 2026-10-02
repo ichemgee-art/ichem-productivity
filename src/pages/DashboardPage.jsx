@@ -324,6 +324,77 @@ export default function DashboardPage() {
     },
   ]
 
+  const executiveExcelSheets = [
+    ...dashboardExportSheets,
+    {
+      name: 'ملخص القطاعات',
+      rows: view.sections.map((row) => ({
+        'القطاع': row.name || '—',
+        'عدد العمليات': Number(row.tasks || 0),
+        'الأمتار': Number(row.meters || 0),
+        'قيمة الإنتاجية': Number(row.revenue || 0),
+      })),
+    },
+    {
+      name: 'الحضور والغياب',
+      rows: (query.data?.currentAttendance || []).map((row) => ({
+        'الاسم': row.person_name || '—',
+        'الدور': roleLabels[row.role] || row.role || '—',
+        'التاريخ': date(row.attendance_date),
+        'الحالة': row.status === 'present' ? 'حاضر' : row.status === 'absent' ? 'غياب' : 'قادم',
+        'نوع الغياب': row.absence_type === 'excused' ? 'بإذن' : row.absence_type === 'unexcused' ? 'بدون إذن' : '—',
+        'الملاحظات': row.note || '',
+      })),
+    },
+    {
+      name: 'مقارنة الأيام',
+      rows: view.dayComparison.map((row) => ({
+        'اليوم': row.label,
+        [monthName(monthKey)]: Number(row.current || 0),
+        [monthName(view.previousKey)]: Number(row.previous || 0),
+        'التغير': Number(row.current || 0) - Number(row.previous || 0),
+      })),
+    },
+    {
+      name: 'التنبيهات',
+      rows: view.alerts.length ? view.alerts.map((alert, index) => ({
+        '#': index + 1,
+        'النوع': alert.tone === 'danger' ? 'حرج' : alert.tone === 'warning' ? 'تنبيه' : 'معلومة',
+        'العنوان': alert.title,
+        'القيمة': alert.value,
+        'التفاصيل': alert.text,
+      })) : [{
+        '#': 1,
+        'النوع': 'سليم',
+        'العنوان': 'لا توجد تنبيهات تشغيلية',
+        'القيمة': 0,
+        'التفاصيل': 'لم يتم رصد حالات واضحة تحتاج تدخلًا في الدورة الحالية.',
+      }],
+    },
+  ]
+
+  const executiveExcel = {
+    filename: `stc-productivity-${monthKey}`,
+    title: `STC PRODUCTIVITY REPORT — ${monthName(monthKey)}`,
+    subtitle: `الدورة من ${date(selectedCycle?.cycle_start)} إلى ${date(selectedCycle?.cycle_end)} · مقارنة عادلة حتى ${date(view.currentCutoff)}`,
+    kpis: [
+      { label: 'العمليات', value: Number(view.currentSummary.tasks || 0) },
+      { label: 'إجمالي الأمتار', value: Number(view.currentSummary.meters || 0) },
+      { label: 'قيمة الإنتاجية', value: Number(view.currentSummary.revenue || 0) },
+      { label: 'متوسط سعر المتر', value: Number(view.currentSummary.avgPrice || 0) },
+      { label: 'مستحقات الفريق', value: Number(view.currentLabor || 0) },
+      { label: 'نسبة الحضور %', value: Number(view.currentAtt.rate || 0) },
+    ],
+    highlights: [
+      { title: 'أعلى مشروع تنفيذًا', value: view.topProject ? `${view.topProject.name} · ${number(view.topProject.meters)} م` : '—' },
+      { title: 'أقل مشروع تنفيذًا', value: view.lowProject ? `${view.lowProject.name} · ${number(view.lowProject.meters)} م` : '—' },
+      { title: 'أعلى قطاع', value: view.topSection ? `${view.topSection.name} · ${number(view.topSection.meters)} م` : '—' },
+      { title: 'الإنتاجية ÷ المستحقات', value: `${number(view.productivityPerLabor, 2)}×` },
+      ...view.alerts,
+    ],
+    sheets: executiveExcelSheets,
+  }
+
   return (
     <div className="page-stack management-dashboard">
       <section className="hero-strip dashboard-hero management-dashboard-hero">
@@ -343,6 +414,7 @@ export default function DashboardPage() {
         <ExportButtons
           filename={`dashboard-${monthKey}`}
           excelSheets={dashboardExportSheets}
+          executiveExcel={executiveExcel}
         />
       </section>
 
