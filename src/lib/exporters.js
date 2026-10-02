@@ -119,6 +119,18 @@ const bodyCell = (key, value, rowIndex) => {
     base.fontWeight = 'bold'
   }
 
+  if (/التغير|فرق|delta|change/i.test(String(key)) && typeof value === 'number' && Number.isFinite(value)) {
+    if (value > 0) {
+      base.backgroundColor = EXCEL_COLORS.greenSoft
+      base.textColor = EXCEL_COLORS.green
+      base.fontWeight = 'bold'
+    } else if (value < 0) {
+      base.backgroundColor = EXCEL_COLORS.redSoft
+      base.textColor = EXCEL_COLORS.red
+      base.fontWeight = 'bold'
+    }
+  }
+
   return base
 }
 
@@ -144,51 +156,6 @@ const uniqueSheetNames = (sheets) => {
     used.add(name)
     return name
   })
-}
-
-const conditionalRulesFor = (rows, keys, dataStartRow) => {
-  if (!rows.length || !keys.length) return []
-  const rules = []
-  const dataEndRow = dataStartRow + rows.length - 1
-
-  keys.forEach((key, index) => {
-    const column = index + 1
-    const cellRange = {
-      from: { row: dataStartRow, column },
-      to: { row: dataEndRow, column },
-    }
-
-    if (/مراجعة|review/i.test(key)) {
-      rules.push(
-        { cellRange, condition: { operator: '=', value: 'تمت المراجعة' }, style: { backgroundColor: EXCEL_COLORS.greenSoft, textColor: EXCEL_COLORS.green, fontWeight: 'bold' } },
-        { cellRange, condition: { operator: '=', value: 'لم تتم' }, style: { backgroundColor: EXCEL_COLORS.amberSoft, textColor: EXCEL_COLORS.amber, fontWeight: 'bold' } },
-      )
-    }
-
-    if (/الحالة|status/i.test(key)) {
-      rules.push(
-        { cellRange, condition: { operator: '=', value: 'حاضر' }, style: { backgroundColor: EXCEL_COLORS.greenSoft, textColor: EXCEL_COLORS.green, fontWeight: 'bold' } },
-        { cellRange, condition: { operator: '=', value: 'غياب' }, style: { backgroundColor: EXCEL_COLORS.redSoft, textColor: EXCEL_COLORS.red, fontWeight: 'bold' } },
-      )
-    }
-
-    if (/سعر/.test(key)) {
-      rules.push({
-        cellRange,
-        condition: { operator: '=', value: 0 },
-        style: { backgroundColor: EXCEL_COLORS.redSoft, textColor: EXCEL_COLORS.red, fontWeight: 'bold' },
-      })
-    }
-
-    if (/التغير|فرق|delta|change/i.test(key) && isNumericColumn(rows, key)) {
-      rules.push(
-        { cellRange, condition: { operator: '>', value: 0 }, style: { backgroundColor: EXCEL_COLORS.greenSoft, textColor: EXCEL_COLORS.green, fontWeight: 'bold' } },
-        { cellRange, condition: { operator: '<', value: 0 }, style: { backgroundColor: EXCEL_COLORS.redSoft, textColor: EXCEL_COLORS.red, fontWeight: 'bold' } },
-      )
-    }
-  })
-
-  return rules
 }
 
 const buildStyledTableSheet = ({ name, rows = [], subtitle = '', dashboardName = '' }, resolvedName) => {
@@ -287,7 +254,6 @@ const buildStyledTableSheet = ({ name, rows = [], subtitle = '', dashboardName =
     stickyColumnsCount: keys.length >= 8 ? 2 : 1,
     orientation: keys.length >= 7 ? 'landscape' : 'portrait',
     zoomScale: keys.length >= 10 ? 0.85 : 0.95,
-    conditionalFormatting: conditionalRulesFor(rows, keys, dataStartRow),
   }
 }
 
