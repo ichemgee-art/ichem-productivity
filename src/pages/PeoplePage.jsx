@@ -95,7 +95,7 @@ export default function PeoplePage({ role = 'engineer' }) {
     }
 
     await refreshPeople()
-    feedback.success('تم حذف الشخص', `تم حذف ${person.name} نهائيًا لأنه غير مرتبط ببيانات تاريخية.`)
+    feedback.deleted('تم حذف الشخص', `تم حذف ${person.name} نهائيًا لأنه غير مرتبط ببيانات تاريخية.`)
   }
 
   const showDetails = (person) => setDetails(person)
