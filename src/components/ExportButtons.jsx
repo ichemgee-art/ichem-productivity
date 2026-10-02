@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Download, FileSpreadsheet, FileText } from 'lucide-react'
-import { exportElementPdf, exportExcel, exportTablePdf } from '../lib/exporters'
+import { BarChart3, Download, FileSpreadsheet, FileText } from 'lucide-react'
+import { exportElementPdf, exportExcel, exportExecutiveExcel, exportTablePdf } from '../lib/exporters'
 import { useFeedback } from '../context/FeedbackContext'
 
-export default function ExportButtons({ filename, excelSheets, pdfTarget, compact = false }) {
+export default function ExportButtons({ filename, excelSheets, executiveExcel, pdfTarget, compact = false }) {
   const [busy, setBusy] = useState('')
   const feedback = useFeedback()
 
@@ -13,6 +13,25 @@ export default function ExportButtons({ filename, excelSheets, pdfTarget, compac
       await exportExcel({ filename, sheets: excelSheets })
     } catch (error) {
       feedback.error('تعذر تصدير Excel', error.message || 'حدث خطأ أثناء إنشاء الملف')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const executive = async () => {
+    if (!executiveExcel) return
+    setBusy('executive')
+    try {
+      await exportExecutiveExcel({
+        filename: executiveExcel.filename || `${filename}-executive`,
+        title: executiveExcel.title,
+        subtitle: executiveExcel.subtitle,
+        kpis: executiveExcel.kpis,
+        sheets: executiveExcel.sheets || excelSheets,
+        highlights: executiveExcel.highlights,
+      })
+    } catch (error) {
+      feedback.error('تعذر إنشاء تقرير Excel', error.message || 'حدث خطأ أثناء إنشاء التقرير الكامل')
     } finally {
       setBusy('')
     }
@@ -39,6 +58,7 @@ export default function ExportButtons({ filename, excelSheets, pdfTarget, compac
     <div className={`export-actions ${compact ? 'compact' : ''}`} data-html2canvas-ignore="true">
       <span className="export-label"><Download size={14} /> تصدير النتائج</span>
       <button className="btn btn-export excel" type="button" onClick={excel} disabled={Boolean(busy)}><FileSpreadsheet size={15} />{busy === 'excel' ? '...' : 'Excel'}</button>
+      {executiveExcel ? <button className="btn btn-export executive-excel" type="button" onClick={executive} disabled={Boolean(busy)}><BarChart3 size={15} />{busy === 'executive' ? '...' : 'تقرير Excel'}</button> : null}
       <button className="btn btn-export pdf" type="button" onClick={pdf} disabled={Boolean(busy)}><FileText size={15} />{busy === 'pdf' ? '...' : 'PDF'}</button>
     </div>
   )
