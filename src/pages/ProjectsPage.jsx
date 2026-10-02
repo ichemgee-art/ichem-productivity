@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Plus, Search } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useFeedback } from '../context/FeedbackContext'
 import { appService } from '../services/appService'
 import { date, number } from '../lib/format'
 import Modal from '../components/Modal'
@@ -12,13 +13,23 @@ import { smartIncludes } from '../lib/smartSearch'
 export default function ProjectsPage() {
   const { permissions } = useAuth()
   const queryClient = useQueryClient()
+  const feedback = useFeedback()
   const [queryText, setQueryText] = useState('')
   const [activeFilter, setActiveFilter] = useState('')
   const [editing, setEditing] = useState(null)
   const exportRef = useRef(null)
 
   const query = useQuery({ queryKey: ['projects'], queryFn: appService.projects })
-  const mutation = useMutation({ mutationFn: appService.saveProject, onSuccess: async () => { setEditing(null); await queryClient.invalidateQueries({ queryKey: ['projects'] }); await queryClient.invalidateQueries({ queryKey: ['references'] }) } })
+  const mutation = useMutation({
+    mutationFn: appService.saveProject,
+    onSuccess: async (_data, variables) => {
+      setEditing(null)
+      await queryClient.invalidateQueries({ queryKey: ['projects'] })
+      await queryClient.invalidateQueries({ queryKey: ['references'] })
+      feedback.success(variables.id ? 'تم تحديث المشروع' : 'تم إضافة المشروع', 'تم حفظ بيانات المشروع بنجاح.')
+    },
+    onError: (err) => feedback.error('تعذر حفظ المشروع', err.message || 'حدث خطأ غير متوقع'),
+  })
 
   const rows = useMemo(() => (query.data || []).filter((item) => {
     if (activeFilter === 'active' && !item.active) return false
