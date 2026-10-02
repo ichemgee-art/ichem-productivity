@@ -415,6 +415,7 @@ export default function DashboardPage() {
           filename={`dashboard-${monthKey}`}
           excelSheets={dashboardExportSheets}
           executiveExcel={executiveExcel}
+          hideQuickExcel
         />
       </section>
 
