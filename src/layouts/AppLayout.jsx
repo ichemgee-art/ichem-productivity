@@ -117,8 +117,6 @@ export default function AppLayout() {
           <button className="menu-btn icon-btn" onClick={() => setMobileOpen(true)}><Menu size={20} /></button>
           <div className="topbar-title"><h1>{meta[0]}</h1><p>{meta[1]}</p></div>
           <div className="topbar-actions">
-            <Link className="btn btn-ghost top-quarter-btn" to="/quarter"><CalendarRange size={16} /> حساب الكوارتر</Link>
-            <Link className="btn btn-ghost top-compare-btn" to="/comparison"><ArrowLeftRight size={16} /> مقارنة الشهور</Link>
             {permissions.canCreateSubmission ? <Link className="btn btn-primary top-entry-btn" to="/productivity/new"><ClipboardPlus size={16} /> إدخال إنتاجية</Link> : null}
             <div className="cycle-control">
               <BarChart3 size={17} />
