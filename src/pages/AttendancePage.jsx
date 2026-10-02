@@ -37,9 +37,11 @@ export default function AttendancePage() {
 
   const absenceMutation = useMutation({
     mutationFn: ({ personId, attendanceDate, type }) => appService.saveAbsence(personId, attendanceDate, type),
-    onSuccess: async () => {
+    onSuccess: async (_data, variables) => {
       setError('')
       await queryClient.invalidateQueries({ queryKey: ['cycle-data', 'attendance'] })
+      const label = variables.type === 'excused' ? 'غياب بإذن' : variables.type === 'unexcused' ? 'غياب بدون إذن' : 'غير محدد'
+      feedback.success('تم تحديث نوع الغياب', `تم حفظ الحالة: ${label}.`)
     },
     onError: (err) => {
       const message = err.message || 'تعذر تحديث نوع الغياب'
