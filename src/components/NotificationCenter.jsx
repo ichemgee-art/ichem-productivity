@@ -1,12 +1,17 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { AlertTriangle, Bell, CheckCircle2, CircleAlert, ClipboardCheck, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useCycle } from '../context/CycleContext'
 import { appService } from '../services/appService'
+import { useFeedback } from '../context/FeedbackContext'
+
+const FIVE_HOURS_MS = 5 * 60 * 60 * 1000
+const PERIODIC_ALERT_KEY = 'stc_periodic_notification_last_at'
 
 export default function NotificationCenter() {
   const { monthKey, selectedCycle } = useCycle()
+  const { alert: alertFeedback } = useFeedback()
   const [open, setOpen] = useState(false)
 
   const rowsQuery = useQuery({
@@ -92,6 +97,36 @@ export default function NotificationCenter() {
   }, [rowsQuery.data, attendanceQuery.data, rowsQuery.isLoading, attendanceQuery.isLoading])
 
   const count = items.filter((item) => !item.passive).length
+
+  useEffect(() => {
+    if (rowsQuery.isLoading || attendanceQuery.isLoading) return undefined
+
+    const now = Date.now()
+    const stored = Number(window.localStorage.getItem(PERIODIC_ALERT_KEY) || 0)
+
+    if (!stored) {
+      window.localStorage.setItem(PERIODIC_ALERT_KEY, String(now))
+      return undefined
+    }
+
+    const elapsed = now - stored
+    const remaining = Math.max(500, FIVE_HOURS_MS - elapsed)
+
+    const timer = window.setTimeout(() => {
+      const message = items
+        .map((item) => `• ${item.title}: ${item.text}`)
+        .join('\n')
+
+      alertFeedback(
+        count ? `تنبيه دوري · ${count} ملاحظة تحتاج متابعة` : 'تنبيه دوري · الحالة مستقرة',
+        message || 'لا توجد تنبيهات تشغيلية في الدورة الحالية.',
+        14000,
+      )
+      window.localStorage.setItem(PERIODIC_ALERT_KEY, String(Date.now()))
+    }, remaining)
+
+    return () => window.clearTimeout(timer)
+  }, [alertFeedback, attendanceQuery.isLoading, count, items, rowsQuery.isLoading])
 
   return (
     <div className="notification-center">
