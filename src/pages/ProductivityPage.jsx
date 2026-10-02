@@ -104,7 +104,7 @@ export default function ProductivityPage() {
     mutationFn: appService.deleteSubmission,
     onSuccess: async () => {
       await invalidate()
-      feedback.success('تم حذف العملية', 'تم تحديث البيانات والحضور المرتبط بها.')
+      feedback.deleted('تم حذف العملية', 'تم تحديث البيانات والحضور المرتبط بها.')
     },
     onError: (err) => feedback.error('تعذر حذف العملية', err.message || 'حدث خطأ غير متوقع'),
   })
