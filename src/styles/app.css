@@ -2107,3 +2107,30 @@ textarea:focus-visible{
     page-break-after:avoid!important;
   }
 }
+
+
+/* Audible feedback notifications */
+.app-toast__copy p{
+  white-space:pre-line;
+}
+.toast-delete{
+  border-color:var(--danger-border)!important;
+}
+.toast-delete .app-toast__icon{
+  background:var(--danger-soft)!important;
+  color:var(--danger)!important;
+}
+.toast-alert{
+  width:min(470px,calc(100vw - 28px));
+  border-color:color-mix(in srgb,var(--brand-gold) 55%,var(--border))!important;
+  box-shadow:0 22px 70px rgba(37,58,85,.24);
+}
+.toast-alert .app-toast__icon{
+  background:color-mix(in srgb,var(--brand-gold) 18%,var(--brand-white))!important;
+  color:#9A6900!important;
+}
+.toast-alert .app-toast__copy p{
+  max-height:220px;
+  overflow:auto;
+  line-height:1.75;
+}
