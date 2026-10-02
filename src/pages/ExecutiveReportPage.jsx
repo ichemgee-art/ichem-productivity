@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { BarChart3, CalendarCheck2, CircleDollarSign, FileSpreadsheet, Printer, Ruler, TrendingUp, Users } from 'lucide-react'
 import { useCycle } from '../context/CycleContext'
 import { appService } from '../services/appService'
-import { exportExcel } from '../lib/exporters'
+import { exportExecutiveExcel } from '../lib/exporters'
 import { date, money, monthName, number, roleLabels } from '../lib/format'
 
 const summarizeRows = (rows) => {
@@ -191,7 +191,26 @@ export default function ExecutiveReportPage() {
   const excel = async () => {
     setExporting(true)
     try {
-      await exportExcel({ filename: `executive-report-${monthKey}`, sheets })
+      await exportExecutiveExcel({
+        filename: `stc-executive-report-${monthKey}`,
+        title: `STC EXECUTIVE PRODUCTIVITY REPORT — ${monthName(monthKey)}`,
+        subtitle: `الدورة من ${date(selectedCycle.cycle_start)} إلى ${date(selectedCycle.cycle_end)} · مقارنة مع ${monthName(report.previousKey)}`,
+        kpis: [
+          { label: 'العمليات', value: report.current.operations },
+          { label: 'إجمالي الأمتار', value: report.current.meters },
+          { label: 'قيمة الإنتاجية', value: report.current.value },
+          { label: 'متوسط سعر المتر', value: report.current.avgPrice },
+          { label: 'مستحقات الفريق', value: report.labor },
+          { label: 'نسبة الحضور %', value: report.attendance.rate },
+        ],
+        highlights: [
+          { title: 'أعلى مشروع تنفيذًا', value: report.projects[0] ? `${report.projects[0].name} · ${number(report.projects[0].meters)} م` : '—' },
+          { title: 'أعلى قطاع', value: report.sections[0] ? `${report.sections[0].name} · ${number(report.sections[0].meters)} م` : '—' },
+          { title: 'أعلى مستحق فردي', value: report.people[0] ? `${report.people[0].name} · ${money(report.people[0].earnings)}` : '—' },
+          { title: 'الحضور', value: `${number(report.attendance.rate, 1)}% · ${number(report.attendance.present)} حضور · ${number(report.attendance.absent)} غياب` },
+        ],
+        sheets,
+      })
     } finally {
       setExporting(false)
     }
