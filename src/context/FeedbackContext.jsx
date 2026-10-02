@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { AlertTriangle, CheckCircle2, Info, Trash2, X, XCircle } from 'lucide-react'
+import { playFeedbackSound, unlockFeedbackAudio } from '../lib/feedbackSound'
 
 const FeedbackContext = createContext(null)
 
@@ -9,15 +10,28 @@ export function FeedbackProvider({ children }) {
   const timerRef = useRef(null)
   const resolverRef = useRef(null)
 
-  const notify = useCallback(({ type = 'success', title, message }) => {
-    if (timerRef.current) window.clearTimeout(timerRef.current)
-    setToast({ type, title, message })
-    timerRef.current = window.setTimeout(() => setToast(null), 4200)
+  useEffect(() => {
+    const unlock = () => unlockFeedbackAudio()
+    window.addEventListener('pointerdown', unlock, { once: true })
+    window.addEventListener('keydown', unlock, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
   }, [])
 
-  const success = useCallback((title, message) => notify({ type: 'success', title, message }), [notify])
-  const error = useCallback((title, message) => notify({ type: 'error', title, message }), [notify])
-  const info = useCallback((title, message) => notify({ type: 'info', title, message }), [notify])
+  const notify = useCallback(({ type = 'success', title, message, duration = 4200, sound = true }) => {
+    if (timerRef.current) window.clearTimeout(timerRef.current)
+    setToast({ type, title, message })
+    if (sound) playFeedbackSound(type)
+    timerRef.current = window.setTimeout(() => setToast(null), duration)
+  }, [])
+
+  const success = useCallback((title, message, duration) => notify({ type: 'success', title, message, duration }), [notify])
+  const error = useCallback((title, message, duration) => notify({ type: 'error', title, message, duration }), [notify])
+  const info = useCallback((title, message, duration) => notify({ type: 'info', title, message, duration }), [notify])
+  const deleted = useCallback((title, message, duration) => notify({ type: 'delete', title, message, duration }), [notify])
+  const alert = useCallback((title, message, duration = 12000) => notify({ type: 'alert', title, message, duration }), [notify])
 
   const confirm = useCallback((options) => new Promise((resolve) => {
     resolverRef.current = resolve
@@ -39,12 +53,16 @@ export function FeedbackProvider({ children }) {
 
   const icon = toast?.type === 'error'
     ? <XCircle size={21} />
-    : toast?.type === 'info'
-      ? <Info size={21} />
-      : <CheckCircle2 size={21} />
+    : toast?.type === 'delete'
+      ? <Trash2 size={21} />
+      : toast?.type === 'alert'
+        ? <AlertTriangle size={21} />
+        : toast?.type === 'info'
+          ? <Info size={21} />
+          : <CheckCircle2 size={21} />
 
   return (
-    <FeedbackContext.Provider value={{ notify, success, error, info, confirm }}>
+    <FeedbackContext.Provider value={{ notify, success, error, info, deleted, alert, confirm }}>
       {children}
 
       {toast ? (
