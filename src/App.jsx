@@ -13,6 +13,7 @@ import SectionsPage from './pages/SectionsPage'
 import ComparisonPage from './pages/ComparisonPage'
 import AuditPage from './pages/AuditPage'
 import ExecutiveReportPage from './pages/ExecutiveReportPage'
+import QuarterReportPage from './pages/QuarterReportPage'
 
 function RequireAuth({ children }) {
   const { session, profile, loading, error, signOut } = useAuth()
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="sections" element={<SectionsPage />} />
         <Route path="comparison" element={<ComparisonPage />} />
         <Route path="report" element={<ExecutiveReportPage />} />
+        <Route path="quarter" element={<QuarterReportPage />} />
         <Route path="audit" element={<RequireAdmin><AuditPage /></RequireAdmin>} />
       </Route>
       <Route path="*" element={<Navigate to={session ? '/' : '/login'} replace />} />
