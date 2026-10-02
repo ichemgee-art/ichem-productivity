@@ -101,18 +101,17 @@ export default function NotificationCenter() {
   useEffect(() => {
     if (rowsQuery.isLoading || attendanceQuery.isLoading) return undefined
 
-    const now = Date.now()
-    const stored = Number(window.localStorage.getItem(PERIODIC_ALERT_KEY) || 0)
+    const runDigest = () => {
+      const now = Date.now()
+      const stored = Number(window.localStorage.getItem(PERIODIC_ALERT_KEY) || 0)
 
-    if (!stored) {
-      window.localStorage.setItem(PERIODIC_ALERT_KEY, String(now))
-      return undefined
-    }
+      if (!stored) {
+        window.localStorage.setItem(PERIODIC_ALERT_KEY, String(now))
+        return
+      }
 
-    const elapsed = now - stored
-    const remaining = Math.max(500, FIVE_HOURS_MS - elapsed)
+      if (now - stored < FIVE_HOURS_MS) return
 
-    const timer = window.setTimeout(() => {
       const message = items
         .map((item) => `• ${item.title}: ${item.text}`)
         .join('\n')
@@ -122,10 +121,12 @@ export default function NotificationCenter() {
         message || 'لا توجد تنبيهات تشغيلية في الدورة الحالية.',
         14000,
       )
-      window.localStorage.setItem(PERIODIC_ALERT_KEY, String(Date.now()))
-    }, remaining)
+      window.localStorage.setItem(PERIODIC_ALERT_KEY, String(now))
+    }
 
-    return () => window.clearTimeout(timer)
+    runDigest()
+    const interval = window.setInterval(runDigest, 60_000)
+    return () => window.clearInterval(interval)
   }, [alertFeedback, attendanceQuery.isLoading, count, items, rowsQuery.isLoading])
 
   return (
