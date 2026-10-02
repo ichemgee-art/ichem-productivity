@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   BarChart3, ClipboardPlus, Database, FolderKanban, Gauge, LogOut, Menu,
-  Settings2, ShieldCheck, UserRoundCog, Users, X, CalendarDays, Wrench, ArrowLeftRight, History, RefreshCw, FileText,
+  Settings2, ShieldCheck, UserRoundCog, Users, X, CalendarDays, Wrench, ArrowLeftRight, History, RefreshCw, FileText, CalendarRange,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useCycle } from '../context/CycleContext'
@@ -23,6 +23,7 @@ const pageTitles = {
   '/sections': ['القطاعات والأسعار', 'القطاعات وأسعار المتر الحالية والتاريخ التشغيلي.'],
   '/comparison': ['مقارنة الشهور', 'مقارنة شاملة بين دورتين من حيث التشغيل والحضور والأداء.'],
   '/report': ['التقرير التنفيذي', 'تقرير شهري للإدارة جاهز للطباعة والتصدير.'],
+  '/quarter': ['حساب الكوارتر', 'اختيار 3 دورات وتحليلها في Dashboard واحدة شاملة.'],
   '/audit': ['سجل التعديلات', 'كل التغييرات ومن نفذها مع إمكانية الاسترجاع الآمن.'],
 }
 
@@ -79,6 +80,7 @@ export default function AppLayout() {
     { to: '/people/worker', label: 'العمال', icon: Users },
     { to: '/attendance', label: 'الحضور والغياب', icon: CalendarDays },
     { to: '/comparison', label: 'مقارنة الشهور', icon: ArrowLeftRight },
+    { to: '/quarter', label: 'حساب الكوارتر', icon: CalendarRange },
     { to: '/report', label: 'التقرير التنفيذي', icon: FileText },
     ...(permissions.canViewAudit ? [{ to: '/audit', label: 'سجل التعديلات', icon: History }] : []),
     { to: '/projects', label: 'المشاريع', icon: FolderKanban },
@@ -115,6 +117,7 @@ export default function AppLayout() {
           <button className="menu-btn icon-btn" onClick={() => setMobileOpen(true)}><Menu size={20} /></button>
           <div className="topbar-title"><h1>{meta[0]}</h1><p>{meta[1]}</p></div>
           <div className="topbar-actions">
+            <Link className="btn btn-ghost top-quarter-btn" to="/quarter"><CalendarRange size={16} /> حساب الكوارتر</Link>
             <Link className="btn btn-ghost top-compare-btn" to="/comparison"><ArrowLeftRight size={16} /> مقارنة الشهور</Link>
             {permissions.canCreateSubmission ? <Link className="btn btn-primary top-entry-btn" to="/productivity/new"><ClipboardPlus size={16} /> إدخال إنتاجية</Link> : null}
             <div className="cycle-control">
