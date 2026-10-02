@@ -4,43 +4,449 @@ import { jsPDF } from 'jspdf'
 
 const safeName = (value) => String(value || 'export').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 80)
 
-export async function exportExcel({ filename, sheets }) {
-  const workbookSheets = (sheets || []).map(({ name, rows = [] }) => {
-    const keys = Object.keys(rows[0] || {})
-    if (!keys.length) {
-      return {
-        sheet: safeName(name).slice(0, 31) || 'Sheet1',
-        data: [['لا توجد بيانات']],
-        columns: [{ width: 20 }],
-        rightToLeft: true,
-        stickyRowsCount: 1,
-      }
+const EXCEL_COLORS = {
+  navy: '#253A55',
+  gold: '#F3B820',
+  white: '#FFFFFF',
+  text: '#253A55',
+  muted: '#6F7D8F',
+  border: '#D8DEE6',
+  soft: '#F6F8FA',
+  softGold: '#FFF7DC',
+  green: '#1F8A5B',
+  greenSoft: '#EAF7F0',
+  red: '#D64545',
+  redSoft: '#FDECEC',
+  amber: '#A26A00',
+  amberSoft: '#FFF4CC',
+}
+
+const excelBorder = {
+  borderColor: EXCEL_COLORS.border,
+  borderStyle: 'thin',
+}
+
+const titleCell = (value, span) => ({
+  value,
+  columnSpan: Math.max(1, span),
+  backgroundColor: EXCEL_COLORS.navy,
+  textColor: EXCEL_COLORS.white,
+  fontWeight: 'bold',
+  fontSize: 18,
+  align: 'right',
+  alignVertical: 'center',
+  height: 34,
+  wrap: true,
+  ...excelBorder,
+})
+
+const subtitleCell = (value, span) => ({
+  value,
+  columnSpan: Math.max(1, span),
+  backgroundColor: EXCEL_COLORS.softGold,
+  textColor: EXCEL_COLORS.navy,
+  fontWeight: 'bold',
+  fontSize: 10,
+  align: 'right',
+  alignVertical: 'center',
+  height: 23,
+  wrap: true,
+  ...excelBorder,
+})
+
+const headerCell = (value) => ({
+  value,
+  backgroundColor: EXCEL_COLORS.navy,
+  textColor: EXCEL_COLORS.white,
+  fontWeight: 'bold',
+  align: 'center',
+  alignVertical: 'center',
+  height: 28,
+  wrap: true,
+  ...excelBorder,
+})
+
+const isMoneyHeader = (key) => /قيمة|مستحق|الإجمالي|سعر|تكلفة|ايراد|إيراد|revenue|amount|price|cost/i.test(String(key))
+const isPercentHeader = (key) => /%|نسبة|percent|rate/i.test(String(key))
+const isNumericColumn = (rows, key) => {
+  const values = rows.slice(0, 30).map((row) => row?.[key]).filter((value) => value !== '' && value != null)
+  return values.length > 0 && values.every((value) => typeof value === 'number' && Number.isFinite(value))
+}
+
+const cellFormat = (key, value) => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
+  if (isPercentHeader(key)) return '#,##0.0"%"'
+  if (isMoneyHeader(key)) return '#,##0.00'
+  return Number.isInteger(value) ? '#,##0' : '#,##0.00'
+}
+
+const bodyCell = (key, value, rowIndex) => {
+  const base = {
+    value: value == null ? '' : value,
+    backgroundColor: rowIndex % 2 ? EXCEL_COLORS.soft : EXCEL_COLORS.white,
+    textColor: EXCEL_COLORS.text,
+    align: typeof value === 'number' ? 'center' : 'right',
+    alignVertical: 'center',
+    wrap: true,
+    ...excelBorder,
+  }
+
+  const format = cellFormat(key, value)
+  if (format) base.format = format
+
+  const normalized = String(value ?? '').trim()
+  if (/^(لم تتم|غير مراجع|غير مراجعة)$/i.test(normalized)) {
+    base.backgroundColor = EXCEL_COLORS.amberSoft
+    base.textColor = EXCEL_COLORS.amber
+    base.fontWeight = 'bold'
+  } else if (/^(تمت المراجعة|مراجع|مراجعة مكتملة)$/i.test(normalized)) {
+    base.backgroundColor = EXCEL_COLORS.greenSoft
+    base.textColor = EXCEL_COLORS.green
+    base.fontWeight = 'bold'
+  } else if (/^(غياب|غائب|absent)$/i.test(normalized)) {
+    base.backgroundColor = EXCEL_COLORS.redSoft
+    base.textColor = EXCEL_COLORS.red
+    base.fontWeight = 'bold'
+  } else if (/^(حاضر|present)$/i.test(normalized)) {
+    base.backgroundColor = EXCEL_COLORS.greenSoft
+    base.textColor = EXCEL_COLORS.green
+    base.fontWeight = 'bold'
+  }
+
+  if (/سعر/.test(String(key)) && Number(value) === 0) {
+    base.backgroundColor = EXCEL_COLORS.redSoft
+    base.textColor = EXCEL_COLORS.red
+    base.fontWeight = 'bold'
+  }
+
+  return base
+}
+
+const estimateColumnWidth = (key, rows) => {
+  const values = rows.slice(0, 120).map((row) => String(row?.[key] ?? ''))
+  const max = Math.max(String(key).length, ...values.map((value) => value.length))
+  const textHeavy = /اسم|مشروع|قطاع|مهندس|فني|مساعد|عامل|ملاحظ|note|project|section/i.test(String(key))
+  const cap = textHeavy ? 34 : 22
+  return Math.min(cap, Math.max(11, Math.ceil(max * 0.88) + 3))
+}
+
+const uniqueSheetNames = (sheets) => {
+  const used = new Set()
+  return (sheets || []).map((sheet, index) => {
+    const base = safeName(sheet?.name || `Sheet ${index + 1}`).slice(0, 31) || `Sheet ${index + 1}`
+    let name = base
+    let counter = 2
+    while (used.has(name)) {
+      const suffix = ` ${counter}`
+      name = `${base.slice(0, 31 - suffix.length)}${suffix}`
+      counter += 1
+    }
+    used.add(name)
+    return name
+  })
+}
+
+const conditionalRulesFor = (rows, keys, dataStartRow) => {
+  if (!rows.length || !keys.length) return []
+  const rules = []
+  const dataEndRow = dataStartRow + rows.length - 1
+
+  keys.forEach((key, index) => {
+    const column = index + 1
+    const cellRange = {
+      from: { row: dataStartRow, column },
+      to: { row: dataEndRow, column },
     }
 
-    const data = [
-      keys.map((key) => ({ value: key, fontWeight: 'bold' })),
-      ...rows.map((row) => keys.map((key) => {
-        const value = row[key]
-        return value == null ? '' : value
-      })),
-    ]
+    if (/مراجعة|review/i.test(key)) {
+      rules.push(
+        { cellRange, condition: { operator: '=', value: 'تمت المراجعة' }, style: { backgroundColor: EXCEL_COLORS.greenSoft, textColor: EXCEL_COLORS.green, fontWeight: 'bold' } },
+        { cellRange, condition: { operator: '=', value: 'لم تتم' }, style: { backgroundColor: EXCEL_COLORS.amberSoft, textColor: EXCEL_COLORS.amber, fontWeight: 'bold' } },
+      )
+    }
 
-    return {
-      sheet: safeName(name).slice(0, 31) || 'Sheet1',
-      data,
-      columns: keys.map((key) => ({ width: Math.min(38, Math.max(12, key.length + 4)) })),
-      rightToLeft: true,
-      stickyRowsCount: 1,
+    if (/الحالة|status/i.test(key)) {
+      rules.push(
+        { cellRange, condition: { operator: '=', value: 'حاضر' }, style: { backgroundColor: EXCEL_COLORS.greenSoft, textColor: EXCEL_COLORS.green, fontWeight: 'bold' } },
+        { cellRange, condition: { operator: '=', value: 'غياب' }, style: { backgroundColor: EXCEL_COLORS.redSoft, textColor: EXCEL_COLORS.red, fontWeight: 'bold' } },
+      )
+    }
+
+    if (/سعر/.test(key)) {
+      rules.push({
+        cellRange,
+        condition: { operator: '=', value: 0 },
+        style: { backgroundColor: EXCEL_COLORS.redSoft, textColor: EXCEL_COLORS.red, fontWeight: 'bold' },
+      })
+    }
+
+    if (/التغير|فرق|delta|change/i.test(key) && isNumericColumn(rows, key)) {
+      rules.push(
+        { cellRange, condition: { operator: '>', value: 0 }, style: { backgroundColor: EXCEL_COLORS.greenSoft, textColor: EXCEL_COLORS.green, fontWeight: 'bold' } },
+        { cellRange, condition: { operator: '<', value: 0 }, style: { backgroundColor: EXCEL_COLORS.redSoft, textColor: EXCEL_COLORS.red, fontWeight: 'bold' } },
+      )
     }
   })
 
-  const output = workbookSheets.length
-    ? workbookSheets
-    : [{ sheet: 'Sheet1', data: [['لا توجد بيانات']], columns: [{ width: 20 }], rightToLeft: true }]
-
-  await writeExcelFile(output, { fontFamily: 'Arial', fontSize: 10 }).toFile(`${safeName(filename)}.xlsx`)
+  return rules
 }
 
+const buildStyledTableSheet = ({ name, rows = [], subtitle = '', dashboardName = '' }, resolvedName) => {
+  const keys = Object.keys(rows[0] || {})
+  const width = Math.max(keys.length, 1)
+  const title = name || resolvedName
+  const dataStartRow = 5
+
+  if (!keys.length) {
+    return {
+      sheet: resolvedName,
+      data: [
+        [titleCell(title, 1)],
+        [subtitleCell(subtitle || 'STC Productivity System', 1)],
+        [{ value: 'لا توجد بيانات', textColor: EXCEL_COLORS.muted, align: 'center', ...excelBorder }],
+      ],
+      columns: [{ width: 26 }],
+      rightToLeft: true,
+      showGridLines: false,
+      stickyRowsCount: 2,
+      zoomScale: 1,
+    }
+  }
+
+  const navigation = dashboardName
+    ? [{
+        value: `=HYPERLINK("#'${dashboardName.replaceAll("'", "''")}'!A1","← الرجوع إلى Dashboard")`,
+        type: 'Formula',
+        textColor: EXCEL_COLORS.navy,
+        fontWeight: 'bold',
+        backgroundColor: EXCEL_COLORS.softGold,
+        align: 'right',
+        ...excelBorder,
+      }, ...Array.from({ length: width - 1 }, () => null)]
+    : Array.from({ length: width }, () => null)
+
+  const header = keys.map(headerCell)
+  const body = rows.map((row, rowIndex) => keys.map((key) => bodyCell(key, row[key], rowIndex)))
+
+  const numericColumns = keys.map((key, index) => ({ key, index })).filter(({ key }) => isNumericColumn(rows, key))
+  const totals = keys.map((key, index) => {
+    if (index === 0) {
+      return {
+        value: 'الإجمالي',
+        backgroundColor: EXCEL_COLORS.softGold,
+        textColor: EXCEL_COLORS.navy,
+        fontWeight: 'bold',
+        align: 'center',
+        ...excelBorder,
+      }
+    }
+    if (!numericColumns.some((item) => item.index === index)) {
+      return {
+        value: '',
+        backgroundColor: EXCEL_COLORS.softGold,
+        ...excelBorder,
+      }
+    }
+    const columnLetter = (() => {
+      let n = index + 1
+      let out = ''
+      while (n > 0) {
+        n -= 1
+        out = String.fromCharCode(65 + (n % 26)) + out
+        n = Math.floor(n / 26)
+      }
+      return out
+    })()
+    const endRow = dataStartRow + rows.length - 1
+    return {
+      value: `=SUM(${columnLetter}${dataStartRow}:${columnLetter}${endRow})`,
+      type: 'Formula',
+      format: isPercentHeader(key) ? '#,##0.0"%"' : isMoneyHeader(key) ? '#,##0.00' : '#,##0.00',
+      backgroundColor: EXCEL_COLORS.softGold,
+      textColor: EXCEL_COLORS.navy,
+      fontWeight: 'bold',
+      align: 'center',
+      ...excelBorder,
+    }
+  })
+
+  return {
+    sheet: resolvedName,
+    data: [
+      [titleCell(title, width), ...Array.from({ length: width - 1 }, () => null)],
+      [subtitleCell(subtitle || 'STC Productivity System', width), ...Array.from({ length: width - 1 }, () => null)],
+      navigation,
+      header,
+      ...body,
+      totals,
+    ],
+    columns: keys.map((key) => ({ width: estimateColumnWidth(key, rows) })),
+    rightToLeft: true,
+    showGridLines: false,
+    stickyRowsCount: 4,
+    stickyColumnsCount: keys.length >= 8 ? 2 : 1,
+    orientation: keys.length >= 7 ? 'landscape' : 'portrait',
+    zoomScale: keys.length >= 10 ? 0.85 : 0.95,
+    conditionalFormatting: conditionalRulesFor(rows, keys, dataStartRow),
+  }
+}
+
+const buildDashboardSheet = ({ title, subtitle, kpis = [], sheets = [], highlights = [] }, dashboardName, sheetNames) => {
+  const columns = 6
+  const safeKpis = [...kpis].slice(0, 6)
+  while (safeKpis.length < 6) safeKpis.push({ label: '—', value: '—' })
+
+  const navCells = sheetNames.slice(1, 7).map((sheetName) => ({
+    value: `=HYPERLINK("#'${sheetName.replaceAll("'", "''")}'!A1","${sheetName}")`,
+    type: 'Formula',
+    backgroundColor: EXCEL_COLORS.softGold,
+    textColor: EXCEL_COLORS.navy,
+    fontWeight: 'bold',
+    align: 'center',
+    alignVertical: 'center',
+    wrap: true,
+    ...excelBorder,
+  }))
+  while (navCells.length < columns) navCells.push(null)
+
+  const highlightRows = (highlights || []).slice(0, 12).map((item, index) => [
+    {
+      value: item?.title || item?.label || `ملاحظة ${index + 1}`,
+      backgroundColor: index % 2 ? EXCEL_COLORS.soft : EXCEL_COLORS.white,
+      textColor: EXCEL_COLORS.navy,
+      fontWeight: 'bold',
+      wrap: true,
+      ...excelBorder,
+    },
+    {
+      value: item?.value ?? item?.text ?? '—',
+      columnSpan: 5,
+      backgroundColor: index % 2 ? EXCEL_COLORS.soft : EXCEL_COLORS.white,
+      textColor: item?.tone === 'danger' ? EXCEL_COLORS.red : item?.tone === 'warning' ? EXCEL_COLORS.amber : EXCEL_COLORS.text,
+      wrap: true,
+      ...excelBorder,
+    },
+    ...Array.from({ length: 4 }, () => null),
+  ])
+
+  return {
+    sheet: dashboardName,
+    data: [
+      [titleCell(title || 'STC Productivity Report', columns), ...Array.from({ length: columns - 1 }, () => null)],
+      [subtitleCell(subtitle || 'Executive Excel Report', columns), ...Array.from({ length: columns - 1 }, () => null)],
+      Array.from({ length: columns }, () => null),
+      ...safeKpis.map((item) => [{
+        value: item.label || '—',
+        backgroundColor: EXCEL_COLORS.navy,
+        textColor: EXCEL_COLORS.gold,
+        fontWeight: 'bold',
+        align: 'center',
+        wrap: true,
+        ...excelBorder,
+      }]).reduce((rows, cell, index) => {
+        if (index < 3) {
+          if (!rows[0]) rows[0] = []
+          rows[0].push(cell[0], {
+            value: safeKpis[index].value ?? '—',
+            backgroundColor: EXCEL_COLORS.white,
+            textColor: EXCEL_COLORS.navy,
+            fontWeight: 'bold',
+            fontSize: 13,
+            align: 'center',
+            wrap: true,
+            ...excelBorder,
+          })
+        } else {
+          if (!rows[1]) rows[1] = []
+          rows[1].push(cell[0], {
+            value: safeKpis[index].value ?? '—',
+            backgroundColor: EXCEL_COLORS.white,
+            textColor: EXCEL_COLORS.navy,
+            fontWeight: 'bold',
+            fontSize: 13,
+            align: 'center',
+            wrap: true,
+            ...excelBorder,
+          })
+        }
+        return rows
+      }, []),
+      Array.from({ length: columns }, () => null),
+      [{
+        value: 'التنقل داخل الملف',
+        columnSpan: columns,
+        backgroundColor: EXCEL_COLORS.navy,
+        textColor: EXCEL_COLORS.white,
+        fontWeight: 'bold',
+        align: 'right',
+        ...excelBorder,
+      }, ...Array.from({ length: columns - 1 }, () => null)],
+      navCells,
+      Array.from({ length: columns }, () => null),
+      [{
+        value: 'ملخص تشغيلي',
+        columnSpan: columns,
+        backgroundColor: EXCEL_COLORS.navy,
+        textColor: EXCEL_COLORS.white,
+        fontWeight: 'bold',
+        align: 'right',
+        ...excelBorder,
+      }, ...Array.from({ length: columns - 1 }, () => null)],
+      ...highlightRows,
+    ],
+    columns: [
+      { width: 22 }, { width: 18 }, { width: 22 },
+      { width: 18 }, { width: 22 }, { width: 18 },
+    ],
+    rightToLeft: true,
+    showGridLines: false,
+    stickyRowsCount: 2,
+    orientation: 'landscape',
+    zoomScale: 0.95,
+  }
+}
+
+export async function exportExcel({ filename, sheets }) {
+  const sourceSheets = (sheets || []).filter((sheet) => Array.isArray(sheet?.rows))
+  const names = uniqueSheetNames(sourceSheets)
+  const workbookSheets = sourceSheets.map((sheet, index) => buildStyledTableSheet({
+    ...sheet,
+    subtitle: sheet.subtitle || 'STC Productivity System · تصدير البيانات',
+  }, names[index]))
+
+  const output = workbookSheets.length
+    ? workbookSheets
+    : [buildStyledTableSheet({ name: 'البيانات', rows: [] }, 'Sheet1')]
+
+  await writeExcelFile(output, {
+    fontFamily: 'Arial',
+    fontSize: 10,
+  }).toFile(`${safeName(filename)}.xlsx`)
+}
+
+export async function exportExecutiveExcel({
+  filename,
+  title = 'STC Productivity Report',
+  subtitle = 'Executive Excel Report',
+  kpis = [],
+  sheets = [],
+  highlights = [],
+}) {
+  const sourceSheets = (sheets || []).filter((sheet) => Array.isArray(sheet?.rows))
+  const dashboardName = 'Dashboard'
+  const names = [dashboardName, ...uniqueSheetNames(sourceSheets)]
+  const dashboard = buildDashboardSheet({ title, subtitle, kpis, sheets: sourceSheets, highlights }, dashboardName, names)
+  const tableSheets = sourceSheets.map((sheet, index) => buildStyledTableSheet({
+    ...sheet,
+    subtitle: sheet.subtitle || subtitle,
+    dashboardName,
+  }, names[index + 1]))
+
+  await writeExcelFile([dashboard, ...tableSheets], {
+    fontFamily: 'Arial',
+    fontSize: 10,
+  }).toFile(`${safeName(filename)}.xlsx`)
+}
 
 const escapeHtml = (value) => String(value ?? '')
   .replaceAll('&', '&amp;')
