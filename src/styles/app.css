@@ -1952,3 +1952,29 @@ textarea:focus-visible{
     page-break-inside:avoid!important;
   }
 }
+
+
+/* Executive Excel V2 */
+.btn-export.executive-excel{
+  color:var(--brand-navy);
+  border-color:color-mix(in srgb,var(--brand-gold) 62%,var(--border));
+  background:color-mix(in srgb,var(--brand-gold) 16%,var(--brand-white));
+}
+.btn-export.executive-excel:hover{
+  border-color:var(--brand-gold);
+  background:color-mix(in srgb,var(--brand-gold) 24%,var(--brand-white));
+  box-shadow:0 7px 16px rgba(37,58,85,.09);
+}
+.dashboard-export-toolbar .export-actions{
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+@media(max-width:760px){
+  .dashboard-export-toolbar .export-actions{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  .dashboard-export-toolbar .btn-export{
+    min-width:0;
+  }
+}
