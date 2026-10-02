@@ -73,7 +73,7 @@ export default function SectionsPage() {
     }
 
     await refreshSections()
-    feedback.success('تم حذف القطاع', `تم حذف ${section.name} نهائيًا لأنه غير مرتبط بعمليات تاريخية.`)
+    feedback.deleted('تم حذف القطاع', `تم حذف ${section.name} نهائيًا لأنه غير مرتبط بعمليات تاريخية.`)
   }
 
   const statMap = useMemo(() => new Map((dashboardQuery.data?.sections || []).map((item) => [item.name, item])), [dashboardQuery.data])
