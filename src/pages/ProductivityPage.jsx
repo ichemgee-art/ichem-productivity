@@ -217,7 +217,16 @@ export default function ProductivityPage() {
               ))}
             </tbody>
           </table>
-          {!filtered.length ? <EmptyState /> : null}
+          {!filtered.length ? (
+            <EmptyState
+              title={rows.length ? 'مفيش نتائج مطابقة للفلاتر' : 'الدورة دي لسه مفيهاش عمليات'}
+              description={rows.length ? 'غيّر البحث أو الفلاتر عشان تظهر العمليات.' : 'ابدأ بإضافة أول عملية إنتاجية للدورة الحالية.'}
+              actionLabel={rows.length ? 'مسح الفلاتر' : permissions.canCreateSubmission ? 'إدخال أول عملية' : ''}
+              actionTo={!rows.length && permissions.canCreateSubmission ? '/productivity/new' : ''}
+              onAction={rows.length ? () => { setQueryText(''); setProject(''); setSection(''); setReview('') } : undefined}
+              hint={rows.length ? 'البيانات موجودة، لكن الفلاتر الحالية مخفية النتائج.' : 'أول عملية هتبدأ تظهر تلقائيًا في الـDashboard والتقارير.'}
+            />
+          ) : null}
         </div>
       </section>
 
@@ -229,28 +238,47 @@ export default function ProductivityPage() {
 }
 
 
-function SubmissionNoteCell({ row, editable, saving, onSave }) {
+function SubmissionNoteCell({ row, editable, onSave }) {
   const [value, setValue] = useState(row.note || '')
   const [state, setState] = useState('idle')
+  const timerRef = useRef(null)
+  const onSaveRef = useRef(onSave)
+  const lastSavedRef = useRef((row.note || '').trim())
+
+  useEffect(() => {
+    onSaveRef.current = onSave
+  }, [onSave])
 
   useEffect(() => {
     setValue(row.note || '')
+    lastSavedRef.current = (row.note || '').trim()
     setState('idle')
-  }, [row.id, row.note])
+    if (timerRef.current) window.clearTimeout(timerRef.current)
+  }, [row.id])
 
-  const save = async () => {
+  useEffect(() => {
+    if (!editable) return undefined
     const next = value.trim()
-    const current = (row.note || '').trim()
-    if (next === current) return
+    if (next === lastSavedRef.current) return undefined
 
-    setState('saving')
-    try {
-      await onSave(row.id, next)
-      setState('saved')
-    } catch {
-      setState('error')
+    setState('dirty')
+    if (timerRef.current) window.clearTimeout(timerRef.current)
+
+    timerRef.current = window.setTimeout(async () => {
+      setState('saving')
+      try {
+        await onSaveRef.current(row.id, next)
+        lastSavedRef.current = next
+        setState('saved')
+      } catch {
+        setState('error')
+      }
+    }, 900)
+
+    return () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current)
     }
-  }
+  }, [editable, row.id, value])
 
   if (!editable) return <span className="operation-note-readonly">{row.note || '—'}</span>
 
@@ -262,16 +290,17 @@ function SubmissionNoteCell({ row, editable, saving, onSave }) {
         rows={2}
         placeholder="اكتب ملاحظة للعملية..."
         onChange={(event) => setValue(event.target.value)}
-        onBlur={save}
-        onKeyDown={(event) => {
-          if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-            event.preventDefault()
-            event.currentTarget.blur()
-          }
-        }}
       />
       <small className={state === 'error' ? 'error' : state === 'saved' ? 'saved' : ''}>
-        {saving || state === 'saving' ? 'جاري الحفظ...' : state === 'saved' ? 'تم الحفظ' : state === 'error' ? 'تعذر الحفظ' : 'Ctrl + Enter للحفظ'}
+        {state === 'saving'
+          ? 'جاري الحفظ...'
+          : state === 'saved'
+            ? 'تم الحفظ ✓'
+            : state === 'error'
+              ? 'تعذر الحفظ — عدّل النص للمحاولة مرة أخرى'
+              : state === 'dirty'
+                ? 'سيتم الحفظ تلقائيًا...'
+                : 'يتم الحفظ تلقائيًا'}
       </small>
     </div>
   )
