@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
-import { CheckCircle2, Pencil, Search, Trash2, XCircle } from 'lucide-react'
+import { CheckCircle2, Pencil, Pin, Search, Trash2, XCircle } from 'lucide-react'
 import { useCycle } from '../context/CycleContext'
 import { useAuth } from '../context/AuthContext'
 import { appService } from '../services/appService'
@@ -12,6 +12,29 @@ import SubmissionForm from '../components/SubmissionForm'
 import ExportButtons from '../components/ExportButtons'
 import { useFeedback } from '../context/FeedbackContext'
 import { smartIncludes } from '../lib/smartSearch'
+
+const PRODUCTIVITY_PIN_KEY = 'stc_productivity_pinned_column'
+const PRODUCTIVITY_PIN_COLUMNS = [
+  { key: 'date', label: 'التاريخ' },
+  { key: 'project', label: 'المشروع' },
+  { key: 'engineers', label: 'المهندسين' },
+  { key: 'technicians', label: 'الفنيين' },
+  { key: 'assistants', label: 'المساعدين' },
+  { key: 'workers', label: 'العمال' },
+  { key: 'section', label: 'القطاع' },
+  { key: 'meters', label: 'الأمتار' },
+  { key: 'price', label: 'سعر المتر' },
+  { key: 'total', label: 'الإجمالي' },
+  { key: 'review', label: 'المراجعة' },
+  { key: 'management', label: 'إدارة' },
+  { key: 'notes', label: 'ملاحظات' },
+]
+
+const getInitialPinnedColumn = () => {
+  if (typeof window === 'undefined') return ''
+  const saved = window.localStorage.getItem(PRODUCTIVITY_PIN_KEY) || ''
+  return PRODUCTIVITY_PIN_COLUMNS.some((item) => item.key === saved) ? saved : ''
+}
 
 export default function ProductivityPage() {
   const { selectedCycle, monthKey } = useCycle()
@@ -25,6 +48,7 @@ export default function ProductivityPage() {
   const [project, setProject] = useState('')
   const [section, setSection] = useState('')
   const [review, setReview] = useState(routeReview)
+  const [pinnedColumn, setPinnedColumn] = useState(getInitialPinnedColumn)
   const [editing, setEditing] = useState(null)
   const [editInitial, setEditInitial] = useState(null)
   const [error, setError] = useState('')
@@ -43,6 +67,12 @@ export default function ProductivityPage() {
     setQueryText(routeQuery)
     setReview(routeReview)
   }, [routeQuery, routeReview])
+
+  useEffect(() => {
+    window.localStorage.setItem(PRODUCTIVITY_PIN_KEY, pinnedColumn)
+  }, [pinnedColumn])
+
+  const pinClass = (key, base = '') => [base, pinnedColumn === key ? 'productivity-pinned-column' : ''].filter(Boolean).join(' ')
 
   const projects = useMemo(() => [...new Set(rows.map((row) => row.project).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ar')), [rows])
   const sections = useMemo(() => [...new Set(rows.map((row) => row.section).filter(Boolean))].sort(), [rows])
@@ -190,22 +220,50 @@ export default function ProductivityPage() {
           <select value={project} onChange={(e) => setProject(e.target.value)}><option value="">كل المشاريع</option>{projects.map((item) => <option key={item}>{item}</option>)}</select>
           <select value={section} onChange={(e) => setSection(e.target.value)}><option value="">كل القطاعات</option>{sections.map((item) => <option key={item}>{item}</option>)}</select>
           <select value={review} onChange={(e) => setReview(e.target.value)}><option value="">كل حالات المراجعة</option><option value="reviewed">تمت المراجعة</option><option value="not_reviewed">لم تتم المراجعة</option></select>
+          <label className="pin-column-control" title="ثبّت عمود أثناء السكرول العرضي">
+            <Pin size={15} />
+            <select value={pinnedColumn} onChange={(e) => setPinnedColumn(e.target.value)} aria-label="تثبيت عمود">
+              <option value="">بدون تثبيت</option>
+              {PRODUCTIVITY_PIN_COLUMNS.filter((item) => item.key !== 'management' || permissions.isAdmin).map((item) => (
+                <option key={item.key} value={item.key}>تثبيت: {item.label}</option>
+              ))}
+            </select>
+          </label>
         </div>
         {error ? <div className="inline-error">{error}</div> : null}
         <div className="data-table-wrap productivity-scroll">
           <table className="data-table">
-            <thead><tr><th>التاريخ</th><th>المشروع</th><th>المهندسين</th><th>الفنيين</th><th>المساعدين</th><th>العمال</th><th>القطاع</th><th>الأمتار</th><th>سعر المتر</th><th>الإجمالي</th><th>المراجعة</th>{permissions.isAdmin ? <th>إدارة</th> : null}<th>ملاحظات</th></tr></thead>
+            <thead><tr>
+              <th className={pinClass('date')}>التاريخ</th>
+              <th className={pinClass('project')}>المشروع</th>
+              <th className={pinClass('engineers')}>المهندسين</th>
+              <th className={pinClass('technicians')}>الفنيين</th>
+              <th className={pinClass('assistants')}>المساعدين</th>
+              <th className={pinClass('workers')}>العمال</th>
+              <th className={pinClass('section')}>القطاع</th>
+              <th className={pinClass('meters')}>الأمتار</th>
+              <th className={pinClass('price')}>سعر المتر</th>
+              <th className={pinClass('total')}>الإجمالي</th>
+              <th className={pinClass('review')}>المراجعة</th>
+              {permissions.isAdmin ? <th className={pinClass('management')}>إدارة</th> : null}
+              <th className={pinClass('notes')}>ملاحظات</th>
+            </tr></thead>
             <tbody>
               {filtered.map((row) => (
                 <tr key={row.id}>
-                  <td>{date(row.work_date)}</td><td className="strong-cell">{row.project}</td><td>{row.engineers || '—'}</td>
-                  <td>{row.technicians || '—'}{row.technician_count ? <small className="count-chip">{row.technician_count}</small> : null}</td>
-                  <td>{row.assistants || '—'}{row.assistant_count ? <small className="count-chip">{row.assistant_count}</small> : null}</td>
-                  <td>{row.workers || '—'}{row.worker_count ? <small className="count-chip">{row.worker_count}</small> : null}</td>
-                  <td>{row.section}</td><td>{number(row.meters)}</td><td>{money(row.price_per_meter)}</td><td className="strong-cell">{money(row.total)}</td>
-                  <td><span className={`status-pill ${row.review_status === 'reviewed' ? 'success' : 'warning'}`}>{row.review_status === 'reviewed' ? 'تمت المراجعة' : 'لم تتم'}</span></td>
-                  {permissions.isAdmin ? <td><div className="row-actions"><button className="icon-btn small" title="تعديل" onClick={() => beginEdit(row)}><Pencil size={15} /></button><button className="icon-btn small" title={row.review_status === 'reviewed' ? 'إلغاء المراجعة' : 'اعتماد المراجعة'} onClick={() => reviewMutation.mutate({ id: row.id, reviewed: row.review_status !== 'reviewed' })}>{row.review_status === 'reviewed' ? <XCircle size={15} /> : <CheckCircle2 size={15} />}</button><button className="icon-btn small danger" title="حذف" onClick={() => remove(row)}><Trash2 size={15} /></button></div></td> : null}
-                  <td className="operation-note-column">
+                  <td className={pinClass('date')}>{date(row.work_date)}</td>
+                  <td className={pinClass('project', 'strong-cell')}>{row.project}</td>
+                  <td className={pinClass('engineers')}>{row.engineers || '—'}</td>
+                  <td className={pinClass('technicians')}>{row.technicians || '—'}{row.technician_count ? <small className="count-chip">{row.technician_count}</small> : null}</td>
+                  <td className={pinClass('assistants')}>{row.assistants || '—'}{row.assistant_count ? <small className="count-chip">{row.assistant_count}</small> : null}</td>
+                  <td className={pinClass('workers')}>{row.workers || '—'}{row.worker_count ? <small className="count-chip">{row.worker_count}</small> : null}</td>
+                  <td className={pinClass('section')}>{row.section}</td>
+                  <td className={pinClass('meters')}>{number(row.meters)}</td>
+                  <td className={pinClass('price')}>{money(row.price_per_meter)}</td>
+                  <td className={pinClass('total', 'strong-cell')}>{money(row.total)}</td>
+                  <td className={pinClass('review')}><span className={`status-pill ${row.review_status === 'reviewed' ? 'success' : 'warning'}`}>{row.review_status === 'reviewed' ? 'تمت المراجعة' : 'لم تتم'}</span></td>
+                  {permissions.isAdmin ? <td className={pinClass('management')}><div className="row-actions"><button className="icon-btn small" title="تعديل" onClick={() => beginEdit(row)}><Pencil size={15} /></button><button className="icon-btn small" title={row.review_status === 'reviewed' ? 'إلغاء المراجعة' : 'اعتماد المراجعة'} onClick={() => reviewMutation.mutate({ id: row.id, reviewed: row.review_status !== 'reviewed' })}>{row.review_status === 'reviewed' ? <XCircle size={15} /> : <CheckCircle2 size={15} />}</button><button className="icon-btn small danger" title="حذف" onClick={() => remove(row)}><Trash2 size={15} /></button></div></td> : null}
+                  <td className={pinClass('notes', 'operation-note-column')}>
                     <SubmissionNoteCell
                       row={row}
                       editable={permissions.canEditSubmissionNotes}
