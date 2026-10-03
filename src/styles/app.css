@@ -3398,3 +3398,96 @@ body,
     touch-action:manipulation!important;
   }
 }
+
+
+/* Productivity optional pinned column */
+.pin-column-control{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-height:44px;
+  padding:0 9px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface);
+  color:var(--brand-gold);
+  flex:0 0 auto;
+}
+.pin-column-control select{
+  min-width:145px;
+  border:0!important;
+  background:transparent!important;
+  color:var(--text);
+  outline:none;
+  font-weight:700;
+}
+.pin-column-control:focus-within{
+  border-color:var(--brand-gold);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--brand-gold) 12%,transparent);
+}
+
+.productivity-scroll .productivity-pinned-column{
+  position:sticky!important;
+  inset-inline-start:0!important;
+  z-index:5!important;
+  background:var(--surface)!important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb,var(--brand-gold) 34%,var(--border)),
+    -10px 0 18px -14px rgba(37,58,85,.42)!important;
+}
+.productivity-scroll thead .productivity-pinned-column{
+  z-index:8!important;
+  background:color-mix(in srgb,var(--brand-gold) 10%,var(--surface))!important;
+  color:var(--text)!important;
+}
+.productivity-scroll tbody tr:hover .productivity-pinned-column{
+  background:color-mix(in srgb,var(--brand-gold) 7%,var(--surface))!important;
+}
+
+html[data-theme="dark"] .pin-column-control{
+  background:var(--dm-surface-2)!important;
+  border-color:var(--dm-border)!important;
+}
+html[data-theme="dark"] .pin-column-control select{
+  color:var(--dm-text)!important;
+}
+html[data-theme="dark"] .productivity-scroll .productivity-pinned-column{
+  background:var(--dm-surface-2)!important;
+  box-shadow:
+    0 0 0 1px rgba(243,184,32,.35),
+    -10px 0 18px -14px rgba(0,0,0,.7)!important;
+}
+html[data-theme="dark"] .productivity-scroll thead .productivity-pinned-column{
+  background:#2A2618!important;
+  color:#F7F9FC!important;
+}
+html[data-theme="dark"] .productivity-scroll tbody tr:hover .productivity-pinned-column{
+  background:#1C2A38!important;
+}
+
+@media(max-width:760px){
+  .pin-column-control{
+    width:100%;
+    min-height:43px;
+  }
+  .pin-column-control select{
+    width:100%;
+    min-width:0;
+  }
+
+  /* On productivity table, mobile no longer pins the first column automatically.
+     Only the column explicitly selected by the user is sticky. */
+  .productivity-scroll .data-table th:first-child:not(.productivity-pinned-column),
+  .productivity-scroll .data-table td:first-child:not(.productivity-pinned-column){
+    position:static!important;
+    inset-inline-start:auto!important;
+    z-index:auto!important;
+    box-shadow:none!important;
+  }
+  html:not([data-theme="dark"]) .productivity-scroll .data-table th:first-child:not(.productivity-pinned-column){
+    background:#F8FAFC!important;
+  }
+  html:not([data-theme="dark"]) .productivity-scroll .data-table td:first-child:not(.productivity-pinned-column){
+    background:#FFFFFF!important;
+  }
+}
