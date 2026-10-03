@@ -3320,3 +3320,81 @@ body,
     color:#FFFFFF!important;
   }
 }
+
+
+/* MOBILE SCROLL SAFETY — page owns vertical scroll */
+@media(max-width:760px){
+  html,
+  body,
+  #root{
+    width:100%!important;
+    height:auto!important;
+    min-height:100%!important;
+    max-height:none!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:auto!important;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y!important;
+  }
+
+  body{
+    position:static!important;
+  }
+
+  .app-shell,
+  .app-main,
+  .page-content,
+  .route-view,
+  .page-stack{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+    overscroll-behavior-y:auto!important;
+    touch-action:pan-y!important;
+  }
+
+  .app-main{
+    min-height:100dvh!important;
+    padding-bottom:calc(var(--mobile-nav-height) + 18px + env(safe-area-inset-bottom))!important;
+  }
+
+  .data-table-wrap,
+  .data-table-wrap.productivity-scroll,
+  .productivity-scroll{
+    max-height:none!important;
+    overflow-x:auto!important;
+    overflow-y:visible!important;
+    overscroll-behavior:auto!important;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-x pan-y!important;
+  }
+
+  .data-table-wrap .data-table,
+  .productivity-scroll .data-table{
+    touch-action:pan-x pan-y!important;
+  }
+
+  .panel,
+  .form-section,
+  .executive-report-document{
+    max-height:none!important;
+  }
+
+  .modal-card,
+  .modal-card.modal-xl,
+  .notification-list,
+  .global-search-results,
+  .ai-messages,
+  .people-picker__list,
+  .person-operation-notes__list{
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-y:contain;
+    touch-action:pan-y!important;
+  }
+
+  .mobile-bottom-nav{
+    touch-action:manipulation!important;
+  }
+}
