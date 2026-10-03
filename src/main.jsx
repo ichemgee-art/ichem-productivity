@@ -6,6 +6,7 @@ import { queryClient } from './lib/queryClient'
 import { AuthProvider } from './context/AuthContext'
 import { CycleProvider } from './context/CycleContext'
 import { FeedbackProvider } from './context/FeedbackContext'
+import { ThemeProvider } from './context/ThemeContext'
 import App from './App'
 import './styles/app.css'
 
@@ -14,11 +15,13 @@ createRoot(document.getElementById('root')).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <FeedbackProvider>
-            <CycleProvider>
-              <App />
-            </CycleProvider>
-          </FeedbackProvider>
+          <ThemeProvider>
+            <FeedbackProvider>
+              <CycleProvider>
+                <App />
+              </CycleProvider>
+            </FeedbackProvider>
+          </ThemeProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
