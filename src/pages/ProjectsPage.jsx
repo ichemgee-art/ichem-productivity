@@ -55,7 +55,15 @@ export default function ProjectsPage() {
     <div className="page-stack">
       <section className="panel" ref={exportRef}>
         <div className="filters-bar"><div className="input-with-icon grow"><Search size={16} /><input placeholder="بحث باسم المشروع..." value={queryText} onChange={(e) => setQueryText(e.target.value)} /></div><select value={activeFilter} onChange={(e) => setActiveFilter(e.target.value)}><option value="">كل الحالات</option><option value="active">نشط</option><option value="inactive">معطل</option></select><ExportButtons filename="projects-filtered" excelSheets={excelSheets} pdfTarget={exportRef} compact />{permissions.canManageProjects ? <button className="btn btn-primary" onClick={() => setEditing({ id: null, name: '', active: true })}><Plus size={16} /> إضافة مشروع</button> : null}</div>
-        <div className="data-table-wrap"><table className="data-table"><thead><tr><th>المشروع</th><th>الحالة</th><th>مرات الاستخدام</th><th>آخر استخدام</th>{permissions.canManageProjects ? <th>إدارة</th> : null}</tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td className="strong-cell">{row.name}</td><td><span className={`status-pill ${row.active ? 'success' : 'neutral'}`}>{row.active ? 'نشط' : 'معطل'}</span></td><td>{number(row.use_count)}</td><td>{date(row.last_used)}</td>{permissions.canManageProjects ? <td><button className="icon-btn small" onClick={() => setEditing(row)}><Pencil size={15} /></button></td> : null}</tr>)}</tbody></table>{!rows.length ? <EmptyState /> : null}</div>
+        <div className="data-table-wrap"><table className="data-table"><thead><tr><th>المشروع</th><th>الحالة</th><th>مرات الاستخدام</th><th>آخر استخدام</th>{permissions.canManageProjects ? <th>إدارة</th> : null}</tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td className="strong-cell">{row.name}</td><td><span className={`status-pill ${row.active ? 'success' : 'neutral'}`}>{row.active ? 'نشط' : 'معطل'}</span></td><td>{number(row.use_count)}</td><td>{date(row.last_used)}</td>{permissions.canManageProjects ? <td><button className="icon-btn small" onClick={() => setEditing(row)}><Pencil size={15} /></button></td> : null}</tr>)}</tbody></table>{!rows.length ? (
+    <EmptyState
+      title={(query.data || []).length ? 'مفيش مشاريع مطابقة للفلاتر' : 'لسه مفيش مشاريع'}
+      description={(query.data || []).length ? 'امسح البحث أو غيّر حالة المشروع.' : 'أضف أول مشروع عشان يظهر في الإدخال والتقارير.'}
+      actionLabel={(query.data || []).length ? 'مسح الفلاتر' : permissions.canManageProjects ? 'إضافة أول مشروع' : ''}
+      onAction={(query.data || []).length ? () => { setQueryText(''); setActiveFilter('') } : permissions.canManageProjects ? () => setEditing({ id: null, name: '', active: true }) : undefined}
+      hint="المشاريع النشطة بتظهر تلقائيًا في شاشة إدخال الإنتاجية."
+    />
+  ) : null}</div>
       </section>
       <Modal open={Boolean(editing)} title={editing?.id ? 'تعديل المشروع' : 'إضافة مشروع'} onClose={() => setEditing(null)}>
         {editing ? <ProjectForm project={editing} saving={mutation.isPending} onSave={(payload) => mutation.mutateAsync(payload)} /> : null}
