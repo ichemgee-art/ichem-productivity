@@ -166,7 +166,15 @@ export default function PeoplePage({ role = 'engineer' }) {
             </button>
           </article>
         ))}
-        {!rows.length ? <EmptyState /> : null}
+        {!rows.length ? (
+    <EmptyState
+      title={`لسه مفيش ${rolePlural[role] || 'أفراد'}`}
+      description="أضف أول اسم عشان يظهر في فريق التنفيذ والحضور والتقارير."
+      actionLabel={permissions.canManagePeople ? 'إضافة أول اسم' : ''}
+      onAction={permissions.canManagePeople ? () => setEditing({ id: null, name: '', role, active: true }) : undefined}
+      hint="الأسماء النشطة فقط بتظهر للاختيار في عمليات الإنتاجية الجديدة."
+    />
+  ) : null}
       </section>
 
       <Modal open={Boolean(editing)} title={editing?.id ? 'تعديل بيانات الشخص' : 'إضافة اسم جديد'} onClose={() => setEditing(null)}>
