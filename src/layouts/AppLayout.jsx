@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   BarChart3, ClipboardPlus, Database, FolderKanban, Gauge, LogOut, Menu,
   Settings2, ShieldCheck, UserRoundCog, Users, X, CalendarDays, Wrench, ArrowLeftRight, History, RefreshCw, FileText, CalendarRange,
+  Moon, Sun, QrCode, Volume2, VolumeX,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useCycle } from '../context/CycleContext'
@@ -13,6 +14,9 @@ import PageErrorBoundary from '../components/PageErrorBoundary'
 import GlobalSearch from '../components/GlobalSearch'
 import NotificationCenter from '../components/NotificationCenter'
 import AIAssistant from '../components/AIAssistant'
+import ShareQrModal from '../components/ShareQrModal'
+import { useTheme } from '../context/ThemeContext'
+import { useFeedback } from '../context/FeedbackContext'
 
 const pageTitles = {
   '/': ['لوحة الإنتاجية', 'ملخص الدورة والفرق والمشاريع.'],
@@ -34,7 +38,10 @@ export default function AppLayout() {
   const { monthKey, selectedCycle, cycles, loading: cyclesLoading, error: cyclesError, selectCycle, refreshCycles } = useCycle()
   const queryClient = useQueryClient()
   const location = useLocation()
+  const { isDark, toggleTheme } = useTheme()
+  const { voiceEnabled, toggleVoice } = useFeedback()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [qrOpen, setQrOpen] = useState(false)
   const [settingActive, setSettingActive] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -132,6 +139,15 @@ export default function AppLayout() {
             <div className="topbar-utility-actions">
               <GlobalSearch />
               <NotificationCenter />
+              <button className="icon-btn" type="button" onClick={() => setQrOpen(true)} title="QR Code للصفحة الحالية" aria-label="QR Code للصفحة الحالية">
+                <QrCode size={18} />
+              </button>
+              <button className="icon-btn" type="button" onClick={toggleVoice} title={voiceEnabled ? 'إيقاف Voice Feedback' : 'تشغيل Voice Feedback'} aria-label={voiceEnabled ? 'إيقاف Voice Feedback' : 'تشغيل Voice Feedback'}>
+                {voiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+              </button>
+              <button className="icon-btn" type="button" onClick={toggleTheme} title={isDark ? 'الوضع الفاتح' : 'الوضع الداكن'} aria-label={isDark ? 'الوضع الفاتح' : 'الوضع الداكن'}>
+                {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
               <button
                 className={`icon-btn system-refresh-btn ${refreshing ? 'is-refreshing' : ''}`}
                 type="button"
@@ -155,6 +171,11 @@ export default function AppLayout() {
         </main>
       </div>
       <AIAssistant />
+      <ShareQrModal
+        open={qrOpen}
+        onClose={() => setQrOpen(false)}
+        url={`${window.location.origin}${location.pathname}`}
+      />
     </div>
   )
 }
