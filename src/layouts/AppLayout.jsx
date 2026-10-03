@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   BarChart3, ClipboardPlus, Database, FolderKanban, Gauge, LogOut, Menu,
   Settings2, ShieldCheck, UserRoundCog, Users, X, CalendarDays, Wrench, ArrowLeftRight, History, RefreshCw, FileText, CalendarRange,
-  Moon, Sun, QrCode, Volume2, VolumeX,
+  Moon, Sun, Home, MoreHorizontal,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useCycle } from '../context/CycleContext'
@@ -14,9 +14,7 @@ import PageErrorBoundary from '../components/PageErrorBoundary'
 import GlobalSearch from '../components/GlobalSearch'
 import NotificationCenter from '../components/NotificationCenter'
 import AIAssistant from '../components/AIAssistant'
-import ShareQrModal from '../components/ShareQrModal'
 import { useTheme } from '../context/ThemeContext'
-import { useFeedback } from '../context/FeedbackContext'
 
 const pageTitles = {
   '/': ['لوحة الإنتاجية', 'ملخص الدورة والفرق والمشاريع.'],
@@ -39,9 +37,7 @@ export default function AppLayout() {
   const queryClient = useQueryClient()
   const location = useLocation()
   const { isDark, toggleTheme } = useTheme()
-  const { voiceEnabled, toggleVoice } = useFeedback()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [qrOpen, setQrOpen] = useState(false)
   const [settingActive, setSettingActive] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -139,12 +135,6 @@ export default function AppLayout() {
             <div className="topbar-utility-actions">
               <GlobalSearch />
               <NotificationCenter />
-              <button className="icon-btn" type="button" onClick={() => setQrOpen(true)} title="QR Code للصفحة الحالية" aria-label="QR Code للصفحة الحالية">
-                <QrCode size={18} />
-              </button>
-              <button className="icon-btn" type="button" onClick={toggleVoice} title={voiceEnabled ? 'إيقاف Voice Feedback' : 'تشغيل Voice Feedback'} aria-label={voiceEnabled ? 'إيقاف Voice Feedback' : 'تشغيل Voice Feedback'}>
-                {voiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
-              </button>
               <button className="icon-btn" type="button" onClick={toggleTheme} title={isDark ? 'الوضع الفاتح' : 'الوضع الداكن'} aria-label={isDark ? 'الوضع الفاتح' : 'الوضع الداكن'}>
                 {isDark ? <Sun size={18} /> : <Moon size={18} />}
               </button>
@@ -158,7 +148,7 @@ export default function AppLayout() {
               >
                 <RefreshCw size={18} />
               </button>
-              <button className="icon-btn" onClick={signOut} title="تسجيل الخروج"><LogOut size={18} /></button>
+              <button className="icon-btn topbar-logout-btn" onClick={signOut} title="تسجيل الخروج"><LogOut size={18} /></button>
             </div>
             <div className="user-chip">
               <div className="user-avatar">{(profile?.display_name || user?.email || 'U').slice(0, 1).toUpperCase()}</div>
@@ -170,12 +160,32 @@ export default function AppLayout() {
           {cyclesError ? <div className="page-error">{cyclesError.message || 'تعذر تحميل دورات النظام'}</div> : <PageErrorBoundary resetKey={location.pathname}><Outlet /></PageErrorBoundary>}
         </main>
       </div>
+      <nav className="mobile-bottom-nav" aria-label="التنقل الرئيسي للموبايل">
+        <NavLink to="/" end className={({ isActive }) => `mobile-bottom-nav__item ${isActive ? 'active' : ''}`}>
+          <Home size={20} /><span>الرئيسية</span>
+        </NavLink>
+        <NavLink to="/productivity" className={({ isActive }) => `mobile-bottom-nav__item ${isActive ? 'active' : ''}`}>
+          <Database size={20} /><span>البيانات</span>
+        </NavLink>
+        {permissions.canCreateSubmission ? (
+          <NavLink to="/productivity/new" className={({ isActive }) => `mobile-bottom-nav__item mobile-bottom-nav__create ${isActive ? 'active' : ''}`}>
+            <span className="mobile-bottom-nav__create-icon"><ClipboardPlus size={22} /></span>
+            <span>إضافة</span>
+          </NavLink>
+        ) : (
+          <NavLink to="/report" className={({ isActive }) => `mobile-bottom-nav__item mobile-bottom-nav__create ${isActive ? 'active' : ''}`}>
+            <span className="mobile-bottom-nav__create-icon"><FileText size={22} /></span>
+            <span>تقرير</span>
+          </NavLink>
+        )}
+        <NavLink to="/attendance" className={({ isActive }) => `mobile-bottom-nav__item ${isActive ? 'active' : ''}`}>
+          <CalendarDays size={20} /><span>الحضور</span>
+        </NavLink>
+        <button className={`mobile-bottom-nav__item ${mobileOpen ? 'active' : ''}`} type="button" onClick={() => setMobileOpen(true)}>
+          <MoreHorizontal size={20} /><span>المزيد</span>
+        </button>
+      </nav>
       <AIAssistant />
-      <ShareQrModal
-        open={qrOpen}
-        onClose={() => setQrOpen(false)}
-        url={`${window.location.origin}${location.pathname}`}
-      />
     </div>
   )
 }
