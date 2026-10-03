@@ -3,17 +3,10 @@ import { AlertTriangle, CheckCircle2, Info, Trash2, X, XCircle } from 'lucide-re
 import { playFeedbackSound, unlockFeedbackAudio } from '../lib/feedbackSound'
 
 const FeedbackContext = createContext(null)
-const VOICE_KEY = 'stc_voice_feedback_enabled'
-
-const getInitialVoiceState = () => {
-  if (typeof window === 'undefined') return true
-  return window.localStorage.getItem(VOICE_KEY) !== 'off'
-}
 
 export function FeedbackProvider({ children }) {
   const [toast, setToast] = useState(null)
   const [dialog, setDialog] = useState(null)
-  const [voiceEnabled, setVoiceEnabled] = useState(getInitialVoiceState)
   const timerRef = useRef(null)
   const resolverRef = useRef(null)
 
@@ -27,37 +20,12 @@ export function FeedbackProvider({ children }) {
     }
   }, [])
 
-  useEffect(() => {
-    window.localStorage.setItem(VOICE_KEY, voiceEnabled ? 'on' : 'off')
-    if (!voiceEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel()
-  }, [voiceEnabled])
-
-  const speak = useCallback((title, message) => {
-    if (!voiceEnabled || !('speechSynthesis' in window)) return
-    try {
-      const text = [title, message].filter(Boolean).join('. ').slice(0, 260)
-      if (!text) return
-      window.speechSynthesis.cancel()
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = 'ar-EG'
-      utterance.rate = 0.96
-      utterance.pitch = 1
-      utterance.volume = 0.9
-      window.speechSynthesis.speak(utterance)
-    } catch {
-      // Voice feedback is optional and must never block a user action.
-    }
-  }, [voiceEnabled])
-
-  const toggleVoice = useCallback(() => setVoiceEnabled((current) => !current), [])
-
-  const notify = useCallback(({ type = 'success', title, message, duration = 4200, sound = true, voice = true }) => {
+  const notify = useCallback(({ type = 'success', title, message, duration = 4200, sound = true }) => {
     if (timerRef.current) window.clearTimeout(timerRef.current)
     setToast({ type, title, message })
     if (sound) playFeedbackSound(type)
-    if (voice) speak(title, message)
     timerRef.current = window.setTimeout(() => setToast(null), duration)
-  }, [speak])
+  }, [])
 
   const success = useCallback((title, message, duration) => notify({ type: 'success', title, message, duration }), [notify])
   const error = useCallback((title, message, duration) => notify({ type: 'error', title, message, duration }), [notify])
@@ -94,7 +62,7 @@ export function FeedbackProvider({ children }) {
           : <CheckCircle2 size={21} />
 
   return (
-    <FeedbackContext.Provider value={{ notify, success, error, info, deleted, alert, confirm, voiceEnabled, toggleVoice }}>
+    <FeedbackContext.Provider value={{ notify, success, error, info, deleted, alert, confirm }}>
       {children}
 
       {toast ? (
