@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Search, Save } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { useCycle } from '../context/CycleContext'
 import { useAuth } from '../context/AuthContext'
 import { appService } from '../services/appService'
@@ -19,7 +19,6 @@ export default function AttendancePage() {
   const [person, setPerson] = useState('')
   const [status, setStatus] = useState('')
   const [queryText, setQueryText] = useState('')
-  const [draftNotes, setDraftNotes] = useState({})
   const [error, setError] = useState('')
   const exportRef = useRef(null)
 
@@ -51,15 +50,9 @@ export default function AttendancePage() {
   })
   const noteMutation = useMutation({
     mutationFn: ({ personId, attendanceDate, note }) => appService.saveAttendanceNote(personId, attendanceDate, note),
-    onSuccess: async (_data, variables) => {
+    onSuccess: async () => {
+      setError('')
       await queryClient.invalidateQueries({ queryKey: ['cycle-data', 'attendance'] })
-      const key = `${variables.personId}-${variables.attendanceDate}`
-      setDraftNotes((current) => {
-        const next = { ...current }
-        delete next[key]
-        return next
-      })
-      feedback.success('تم حفظ الملاحظة', 'تم تحديث ملاحظة الحضور بنجاح.')
     },
     onError: (err) => {
       const message = err.message || 'تعذر حفظ الملاحظة'
@@ -67,14 +60,6 @@ export default function AttendancePage() {
       feedback.error('تعذر حفظ الملاحظة', message)
     },
   })
-
-  const saveNote = async (row) => {
-    setError('')
-    try {
-      const key = `${row.person_id}-${row.attendance_date}`
-      await noteMutation.mutateAsync({ personId: row.person_id, attendanceDate: row.attendance_date, note: draftNotes[key] ?? row.note ?? '' })
-    } catch (err) { setError(err.message || 'تعذر حفظ الملاحظة') }
-  }
 
   const excelSheets = [{
     name: 'الحضور والغياب',
@@ -105,15 +90,92 @@ export default function AttendancePage() {
         {error ? <div className="inline-error">{error}</div> : null}
         <div className="data-table-wrap">
           <table className="data-table">
-            <thead><tr><th>الشخص</th><th>الدور</th><th>التاريخ</th><th>الحالة</th><th>نوع الغياب</th><th>الملاحظة</th>{permissions.canManageAttendance ? <th>حفظ</th> : null}</tr></thead>
+            <thead><tr><th>الشخص</th><th>الدور</th><th>التاريخ</th><th>الحالة</th><th>نوع الغياب</th><th>الملاحظة</th></tr></thead>
             <tbody>{filtered.map((row) => {
               const key = `${row.person_id}-${row.attendance_date}`
-              return <tr key={key}><td className="strong-cell">{row.person_name}</td><td>{roleLabels[row.role]}</td><td>{date(row.attendance_date)} {row.is_friday ? <span className="count-chip">جمعة</span> : null}</td><td><span className={`status-pill ${row.status === 'present' ? 'success' : row.status === 'absent' ? 'danger' : 'neutral'}`}>{row.status === 'present' ? 'حاضر' : row.status === 'absent' ? 'غياب' : 'قادم'}</span></td><td><select disabled={!permissions.canManageAttendance || row.status !== 'absent' || absenceMutation.isPending} value={row.absence_type || ''} onChange={(e) => absenceMutation.mutate({ personId: row.person_id, attendanceDate: row.attendance_date, type: e.target.value })}><option value="">غير محدد</option><option value="excused">غياب بإذن</option><option value="unexcused">غياب بدون إذن</option></select></td><td><input className="table-input" disabled={!permissions.canManageAttendance} value={draftNotes[key] ?? row.note ?? ''} onChange={(e) => setDraftNotes((current) => ({ ...current, [key]: e.target.value }))} /></td>{permissions.canManageAttendance ? <td><button className="icon-btn small" disabled={noteMutation.isPending} onClick={() => saveNote(row)}><Save size={15} /></button></td> : null}</tr>
+              return <tr key={key}><td className="strong-cell">{row.person_name}</td><td>{roleLabels[row.role]}</td><td>{date(row.attendance_date)} {row.is_friday ? <span className="count-chip">جمعة</span> : null}</td><td><span className={`status-pill ${row.status === 'present' ? 'success' : row.status === 'absent' ? 'danger' : 'neutral'}`}>{row.status === 'present' ? 'حاضر' : row.status === 'absent' ? 'غياب' : 'قادم'}</span></td><td><select disabled={!permissions.canManageAttendance || row.status !== 'absent' || absenceMutation.isPending} value={row.absence_type || ''} onChange={(e) => absenceMutation.mutate({ personId: row.person_id, attendanceDate: row.attendance_date, type: e.target.value })}><option value="">غير محدد</option><option value="excused">غياب بإذن</option><option value="unexcused">غياب بدون إذن</option></select></td><td><AttendanceNoteCell row={row} editable={permissions.canManageAttendance} onSave={(note) => noteMutation.mutateAsync({ personId: row.person_id, attendanceDate: row.attendance_date, note })} /></td></tr>
             })}</tbody>
           </table>
-          {!filtered.length ? <EmptyState /> : null}
+          {!filtered.length ? (
+            <EmptyState
+              title={rows.length ? 'مفيش حضور مطابق للفلاتر' : 'لسه مفيش بيانات حضور للدورة'}
+              description={rows.length ? 'جرّب تمسح الفلاتر أو تغيّر البحث.' : 'بيانات الحضور هتظهر تلقائيًا بمجرد وجود تشغيل في الدورة.'}
+              actionLabel={rows.length ? 'مسح الفلاتر' : ''}
+              onAction={rows.length ? () => { setRole(''); setPerson(''); setStatus(''); setQueryText('') } : undefined}
+              hint={rows.length ? 'البيانات موجودة لكن الفلاتر الحالية مخفية النتائج.' : 'الحضور مرتبط بعمليات الإنتاجية المسجلة.'}
+            />
+          ) : null}
         </div>
       </section>
+    </div>
+  )
+}
+
+
+function AttendanceNoteCell({ row, editable, onSave }) {
+  const [value, setValue] = useState(row.note || '')
+  const [state, setState] = useState('idle')
+  const timerRef = useRef(null)
+  const onSaveRef = useRef(onSave)
+  const lastSavedRef = useRef((row.note || '').trim())
+
+  useEffect(() => {
+    onSaveRef.current = onSave
+  }, [onSave])
+
+  useEffect(() => {
+    setValue(row.note || '')
+    lastSavedRef.current = (row.note || '').trim()
+    setState('idle')
+    if (timerRef.current) window.clearTimeout(timerRef.current)
+  }, [row.person_id, row.attendance_date])
+
+  useEffect(() => {
+    if (!editable) return undefined
+    const next = value.trim()
+    if (next === lastSavedRef.current) return undefined
+
+    setState('dirty')
+    if (timerRef.current) window.clearTimeout(timerRef.current)
+
+    timerRef.current = window.setTimeout(async () => {
+      setState('saving')
+      try {
+        await onSaveRef.current(next)
+        lastSavedRef.current = next
+        setState('saved')
+      } catch {
+        setState('error')
+      }
+    }, 900)
+
+    return () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current)
+    }
+  }, [editable, row.person_id, row.attendance_date, value])
+
+  if (!editable) return <span>{row.note || '—'}</span>
+
+  return (
+    <div className="autosave-note-field">
+      <input
+        className="table-input"
+        value={value}
+        maxLength={1000}
+        placeholder="اكتب ملاحظة..."
+        onChange={(event) => setValue(event.target.value)}
+      />
+      <small className={state === 'saved' ? 'saved' : state === 'error' ? 'error' : ''}>
+        {state === 'saving'
+          ? 'جاري الحفظ...'
+          : state === 'saved'
+            ? 'تم الحفظ ✓'
+            : state === 'error'
+              ? 'تعذر الحفظ'
+              : state === 'dirty'
+                ? 'سيتم الحفظ تلقائيًا...'
+                : 'يتم الحفظ تلقائيًا'}
+      </small>
     </div>
   )
 }
